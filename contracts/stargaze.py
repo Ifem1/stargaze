@@ -9,6 +9,16 @@ from urllib.parse import urlparse
 class Stargaze(gl.Contract):
     """Advisory-scoped immutable release assessment and promotion protocol."""
 
+    owner: str
+    release_count: u256
+    assessment_count: u256
+    releases: TreeMap[str, str]
+    assessments: TreeMap[str, str]
+    release_keys: TreeMap[str, str]
+    assessment_keys: TreeMap[str, str]
+    authorized_hosts: TreeMap[str, str]
+    revoked_hosts: TreeMap[str, bool]
+
     MAX_RECORDS = 10000
     MAX_SOURCES = 4
     MAX_BODY_BYTES = 12000
@@ -16,14 +26,8 @@ class Stargaze(gl.Contract):
 
     def __init__(self):
         self.owner = self._address_text(gl.message.sender_address)
-        self.release_count = 0
-        self.assessment_count = 0
-        self.releases: dict[str, str] = {}
-        self.assessments: dict[str, str] = {}
-        self.release_keys: dict[str, str] = {}
-        self.assessment_keys: dict[str, str] = {}
-        self.authorized_hosts: dict[str, str] = {}
-        self.revoked_hosts: dict[str, bool] = {}
+        self.release_count = u256(0)
+        self.assessment_count = u256(0)
 
     def _fail(self, message: str):
         raise gl.vm.UserError(message)
@@ -116,7 +120,7 @@ class Stargaze(gl.Contract):
                   "status": "SEALED"}
         self.releases[release_id] = json.dumps(record, sort_keys=True)
         self.release_keys[project_key] = release_id
-        self.release_count += 1
+        self.release_count = u256(self.release_count + 1)
         return release_id
 
     @gl.public.write
@@ -172,7 +176,7 @@ class Stargaze(gl.Contract):
                   "sequence": self.assessment_count + 1}
         self.assessments[assessment_id] = json.dumps(record, sort_keys=True)
         self.assessment_keys[key] = assessment_id
-        self.assessment_count += 1
+        self.assessment_count = u256(self.assessment_count + 1)
         return assessment_id
 
     def _collect_and_classify(self, assessment: dict) -> str:

@@ -33,4 +33,4 @@ See [deployment](docs/DEPLOYMENT.md) before any public write. Public deployment 
 
 ## Live evidence
 
-**LIVE NOT VERIFIED.** No receipts, contract address, Vercel URL or real advisory scenario are asserted until executed and independently confirmed. See [live verification](docs/LIVE_VERIFICATION.md).
+**Live contract and both advisory scenarios verified.** The active Studionet contract, finalized receipts, validator outcomes, packet commitments, and authorization gates are recorded in [live verification](docs/LIVE_VERIFICATION.md). The localhost app uses that contract. No Vercel deployment or GitHub push has been performed.

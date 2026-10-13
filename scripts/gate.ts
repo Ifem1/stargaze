@@ -1,6 +1,8 @@
 import { createHash } from 'node:crypto';
 import { spawn } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { createClient } from 'genlayer-js';
 import { studionet } from 'genlayer-js/chains';
 import { TransactionHashVariant } from 'genlayer-js/types';
@@ -117,6 +119,6 @@ async function main() {
   process.exitCode = exitCode;
 }
 
-if (import.meta.url === `file://${process.argv[1]?.replaceAll('\\', '/')}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   main().catch((error: unknown) => { process.stderr.write(`${error instanceof Error ? error.message : 'DENY: unknown gate failure'}\n`); process.exitCode = 1; });
 }

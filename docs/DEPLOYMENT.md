@@ -11,10 +11,10 @@ Never set the application or CLI to Studio Dev 61997. Do not deploy without a fu
 
 ## Local checks
 
-Run `npm ci` at the repository root, Python 3.12 with `pip install -e '.[test]'`, then `pytest`, `npx genvm-lint check contracts/stargaze.py`, and frontend lint/typecheck/test/build through the frontend npm workspace. Confirm the CLI reports version `0.39.1` and `network info` reports chain 61999 before any deployment.
+Run `npm ci` at the repository root, Python 3.12 with `pip install -e '.[test]'`, then `pytest`, `npm run preflight:contract`, `npm run lint:contract`, and `npm run schema:contract`. These scripts call `scripts/run_genvm_lint.py`, which pins GenVM `v0.2.16` and keeps SDK artifacts inside the repository cache. Do not invoke a globally installed `genvm-lint` directly. Run frontend lint/typecheck/test/build through the frontend npm workspace. Confirm the repository-local CLI reports version `0.39.1` and `network info` reports chain 61999 before any deployment.
 
 ## Stable deployment
 
-Use the local `tooling/node_modules/.bin/genlayer` binary (or its Windows `.cmd` shim), never a global executable. The deploy command must use `https://studio.genlayer.com/api` explicitly. Record the source SHA-256, deploy transaction hash, contract address and finalized receipt in `docs/LIVE_VERIFICATION.md`. Configure the same address in `frontend/.env.production.local` and Vercel only after source verification.
+Use the local `tooling/node_modules/.bin/genlayer` binary (or its Windows `.cmd` shim), never a global executable. The deploy command must use `https://studio.genlayer.com/api` explicitly. Record the source SHA-256, deploy transaction hash, contract address and finalized receipt in `docs/LIVE_VERIFICATION.md`. The active deployment and live A/B evidence are recorded there. Configure that verified address in `frontend/.env.local` for localhost; production deployment requires a separate configured target.
 
-No deployment has been performed as part of this initial local build. A funded local wallet and explicit external deployment authorization are required for public writes.
+Deployment used a funded throwaway Studionet wallet after the user explicitly authorized that deployment and live cycle. Never reuse that wallet for production. Its contract ownership and registered release claims do not assert upstream project ownership or source provenance.

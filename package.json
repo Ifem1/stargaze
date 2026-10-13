@@ -8,9 +8,9 @@
     "test:gate": "vitest run tests/gate.test.ts",
     "typecheck:gate": "tsc --noEmit -p tsconfig.gate.json",
     "test:frontend": "npm --workspace frontend test -- --run",
-    "lint:contract": "genvm-lint check contracts/stargaze.py",
-    "preflight:contract": "genvm-lint validate contracts/stargaze.py",
-    "schema:contract": "genvm-lint schema contracts/stargaze.py"
+    "lint:contract": "python scripts/run_genvm_lint.py check contracts/stargaze.py",
+    "preflight:contract": "python scripts/run_genvm_lint.py validate contracts/stargaze.py",
+    "schema:contract": "python scripts/run_genvm_lint.py schema contracts/stargaze.py"
   },
   "devDependencies": {
     "genlayer": "0.39.1",
