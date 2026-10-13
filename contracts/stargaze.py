@@ -63,6 +63,79 @@ class Stargaze(gl.Contract):
             self._fail("Invalid source authority")
         return parsed.hostname
 
+    def _source_key(self, host: str, role: str) -> str:
+        return host + "|" + role
+
+    def _validate_canonical_source(self, url: str, role: str, advisory_id: str,
+                                   ecosystem: str, package_name: str, release: dict) -> str:
+        parsed = urlparse(url)
+        if parsed.query or parsed.params or parsed.fragment:
+            self._fail("Canonical evidence URLs may not contain query, params or fragment")
+        if role == "PRIMARY":
+            if re.fullmatch(r"GHSA-[23456789CFGHJMPQRVWXcfghjmpqrvwx]{4}-[23456789CFGHJMPQRVWXcfghjmpqrvwx]{4}-[23456789CFGHJMPQRVWXcfghjmpqrvwx]{4}", advisory_id):
+                if url == "https://api.github.com/advisories/" + advisory_id:
+                    return "github_advisory"
+            if url == "https://api.osv.dev/v1/vulns/" + advisory_id:
+                return "osv_advisory"
+            self._fail("Primary source URL must be a canonical endpoint for the frozen advisory ID")
+        if role != "SUPPLEMENTAL":
+            self._fail("Invalid source role")
+        if ecosystem == "npm":
+            registry_package = package_name.replace("/", "%2f")
+            if url == "https://registry.npmjs.org/" + registry_package + "/" + release["version"]:
+                return "npm_release"
+        repository = urlparse(release["repository_url"])
+        if repository.hostname == "github.com":
+            repository_path = repository.path.strip("/")
+            if repository_path.endswith(".git"):
+                repository_path = repository_path[:-4]
+            if url == "https://api.github.com/repos/" + repository_path + "/commits/" + release["commit_sha"]:
+                return "github_commit"
+        if url == "https://api.osv.dev/v1/vulns/" + advisory_id:
+            return "osv_advisory"
+        self._fail("Supplemental source URL is not a canonical endpoint for this release or advisory")
+
+    def _source_metadata_matches(self, source: dict, body: str, assessment: dict, release: dict) -> bool:
+        try:
+            metadata = json.loads(body)
+        except Exception:
+            return False
+        if not isinstance(metadata, dict):
+            return False
+        if source["kind"] == "github_advisory":
+            if metadata.get("ghsa_id") != assessment["advisory_id"]:
+                return False
+            vulnerabilities = metadata.get("vulnerabilities")
+            if not isinstance(vulnerabilities, list):
+                return False
+            for vulnerability in vulnerabilities:
+                if not isinstance(vulnerability, dict):
+                    continue
+                package = vulnerability.get("package")
+                if isinstance(package, dict) and package.get("ecosystem") == assessment["ecosystem"] and package.get("name") == assessment["package_name"]:
+                    return True
+            return False
+        if source["kind"] == "npm_release":
+            return metadata.get("name") == release["package_name"] and metadata.get("version") == release["version"]
+        if source["kind"] == "github_commit":
+            expected_html = release["repository_url"].rstrip("/")
+            if expected_html.endswith(".git"):
+                expected_html = expected_html[:-4]
+            return metadata.get("sha") == release["commit_sha"] and metadata.get("html_url") == expected_html + "/commit/" + release["commit_sha"]
+        if source["kind"] == "osv_advisory":
+            aliases = metadata.get("aliases", [])
+            if metadata.get("id") != assessment["advisory_id"] and (not isinstance(aliases, list) or assessment["advisory_id"] not in aliases):
+                return False
+            affected = metadata.get("affected")
+            if not isinstance(affected, list):
+                return False
+            for item in affected:
+                package = item.get("package") if isinstance(item, dict) else None
+                if isinstance(package, dict) and package.get("ecosystem") == assessment["ecosystem"] and package.get("name") == assessment["package_name"]:
+                    return True
+            return False
+        return False
+
     @gl.public.write
     def authorize_source_host(self, host: str, role: str):
         if self._sender_text() != self.owner:
@@ -72,16 +145,22 @@ class Stargaze(gl.Contract):
             self._fail("Host must be an exact lower-case DNS name")
         if role not in ("PRIMARY", "SUPPLEMENTAL"):
             self._fail("Invalid source role")
-        self.authorized_hosts[host] = role
-        self.revoked_hosts[host] = False
+        key = self._source_key(host, role)
+        self.authorized_hosts[key] = role
+        self.revoked_hosts[key] = False
 
     @gl.public.write
     def revoke_source_host(self, host: str):
         if self._sender_text() != self.owner:
             self._fail("Only trust administrator")
-        if host not in self.authorized_hosts:
+        found = False
+        for role in ("PRIMARY", "SUPPLEMENTAL"):
+            key = self._source_key(host, role)
+            if key in self.authorized_hosts:
+                self.revoked_hosts[key] = True
+                found = True
+        if not found:
             self._fail("Unknown source host")
-        self.revoked_hosts[host] = True
 
     @gl.public.write
     def register_release(self, project: str, repository_url: str, owner: str, version: str,
@@ -94,6 +173,8 @@ class Stargaze(gl.Contract):
         parsed = urlparse(repository_url)
         if parsed.scheme != "https" or parsed.hostname not in ("github.com", "gitlab.com", "codeberg.org") or parsed.username or parsed.password:
             self._fail("Repository URL must use an approved HTTPS forge")
+        if parsed.hostname != parsed.hostname.lower() or parsed.query or parsed.fragment or parsed.params or parsed.port not in (None, 443):
+            self._fail("Repository URL must be canonical and contain no query or fragment")
         self._bounded(owner, "owner", 100)
         self._bounded(version, "version", 100)
         self._bounded(ecosystem, "ecosystem", 30)
@@ -113,7 +194,7 @@ class Stargaze(gl.Contract):
                 self._fail("Predecessor identity policy mismatch")
         release_id = "rel-" + str(self.release_count + 1)
         record = {"id": release_id, "project": project, "repository_url": repository_url,
-                  "owner": owner, "version": version, "commit_sha": commit_sha,
+                  "owner": owner, "registered_by": self._sender_text(), "version": version, "commit_sha": commit_sha,
                   "artifact_digest": artifact_digest, "ecosystem": ecosystem,
                   "package_name": package_name, "manifest_digest": manifest_digest,
                   "predecessor_id": predecessor_id, "sequence": self.release_count + 1,
@@ -132,6 +213,8 @@ class Stargaze(gl.Contract):
         if release_id not in self.releases:
             self._fail("Unknown release")
         release = json.loads(self.releases[release_id])
+        if self._sender_text() != release["owner"].lower():
+            self._fail("Only the sealed release owner may request its assessment")
         self._bounded(advisory_id, "advisory ID", 100)
         self._bounded(revision, "advisory revision", 128)
         self._bounded(title, "title", 200)
@@ -154,16 +237,18 @@ class Stargaze(gl.Contract):
             url = self._bounded(source["url"], "source URL", 300)
             host = self._source_host(url)
             role = source["role"]
-            if role != self.authorized_hosts.get(host) or self.revoked_hosts.get(host, True):
+            source_key = self._source_key(host, role) if role in ("PRIMARY", "SUPPLEMENTAL") else ""
+            if role not in ("PRIMARY", "SUPPLEMENTAL") or role != self.authorized_hosts.get(source_key) or self.revoked_hosts.get(source_key, True):
                 self._fail("Source is not currently authorized for the declared role")
+            kind = self._validate_canonical_source(url, role, advisory_id, ecosystem, package_name, release)
             if role == "PRIMARY":
                 primary_count += 1
             if url <= previous_url:
                 self._fail("Sources must be unique and sorted lexicographically")
             previous_url = url
-            normalized.append({"url": url, "role": role, "host": host})
-        if primary_count == 0:
-            self._fail("At least one primary source is required")
+            normalized.append({"url": url, "role": role, "host": host, "kind": kind})
+        if primary_count != 1:
+            self._fail("Exactly one canonical primary source is required")
         key = release_id + "|" + advisory_id + "|" + revision
         if key in self.assessment_keys:
             self._fail("Assessment identity already exists")
@@ -171,7 +256,7 @@ class Stargaze(gl.Contract):
         record = {"id": assessment_id, "release_id": release_id, "advisory_id": advisory_id,
                   "revision": revision, "title": title, "ecosystem": ecosystem,
                   "package_name": package_name, "policy_version": policy_version,
-                  "sources": normalized, "state": "OPEN", "verdict": "",
+                  "registered_by": self._sender_text(), "sources": normalized, "state": "OPEN", "verdict": "",
                   "authorization": "HOLD", "packet_digest": "", "eligible": False,
                   "sequence": self.assessment_count + 1}
         self.assessments[assessment_id] = json.dumps(record, sort_keys=True)
@@ -184,10 +269,11 @@ class Stargaze(gl.Contract):
         evidence = []
         complete = True
         for source in assessment["sources"]:
-            if self.authorized_hosts.get(source["host"]) != source["role"] or self.revoked_hosts.get(source["host"], True):
+            source_key = self._source_key(source["host"], source["role"])
+            if self.authorized_hosts.get(source_key) != source["role"] or self.revoked_hosts.get(source_key, True):
                 complete = False
                 evidence.append({"url": source["url"], "role": source["role"], "status": 0,
-                                 "body_sha256": "", "body": "", "complete": False})
+                                 "body_sha256": "", "body": "", "authority_valid": False, "complete": False})
                 continue
             try:
                 response = gl.nondet.web.get(source["url"])
@@ -200,16 +286,19 @@ class Stargaze(gl.Contract):
                     evidence.append({"url": source["url"], "role": source["role"], "status": status, "body_sha256": "", "body": "", "complete": False})
                 else:
                     decoded = body.decode("utf-8")
+                    authority_valid = self._source_metadata_matches(source, decoded, assessment, release)
+                    if not authority_valid:
+                        complete = False
                     evidence.append({"url": source["url"], "role": source["role"], "status": status,
                                      "body_sha256": hashlib.sha256(body).hexdigest(), "body": decoded,
-                                     "complete": True})
+                                     "authority_valid": authority_valid, "complete": authority_valid})
             except Exception:
                 complete = False
                 evidence.append({"url": source["url"], "role": source["role"], "status": 0,
-                                 "body_sha256": "", "body": "", "complete": False})
+                                 "body_sha256": "", "body": "", "authority_valid": False, "complete": False})
         primary_ok = False
         for source in evidence:
-            if source["role"] == "PRIMARY" and source["complete"]:
+            if source["role"] == "PRIMARY" and source["complete"] and source["authority_valid"]:
                 primary_ok = True
         packet = {"domain": "STARGAZE_EVIDENCE_PACKET_V1", "release": release,
                   "advisory": {"id": assessment["advisory_id"], "revision": assessment["revision"],
@@ -284,6 +373,28 @@ class Stargaze(gl.Contract):
         if assessment_id not in self.assessments:
             return {}
         return json.loads(self.assessments[assessment_id])
+
+    @gl.public.view
+    def get_release_by_identity(self, project: str, ecosystem: str, package_name: str,
+                                version: str, commit_sha: str) -> dict:
+        key = project + "|" + ecosystem + "|" + package_name + "|" + version + "|" + commit_sha
+        release_id = self.release_keys.get(key, "")
+        if not release_id or release_id not in self.releases:
+            return {}
+        return json.loads(self.releases[release_id])
+
+    @gl.public.view
+    def get_assessment_by_identity(self, release_id: str, advisory_id: str, revision: str) -> dict:
+        key = release_id + "|" + advisory_id + "|" + revision
+        assessment_id = self.assessment_keys.get(key, "")
+        if not assessment_id or assessment_id not in self.assessments:
+            return {}
+        return json.loads(self.assessments[assessment_id])
+
+    @gl.public.view
+    def is_source_authorized(self, host: str, role: str) -> bool:
+        key = self._source_key(host, role)
+        return self.authorized_hosts.get(key) == role and not self.revoked_hosts.get(key, True)
 
     @gl.public.view
     def get_release_counter(self) -> int:

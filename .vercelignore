@@ -1,0 +1,14 @@
+.git
+.pytest_cache
+.venv
+.genvm-cache
+.gltest-cache
+.ruff_cache
+**/__pycache__
+**/node_modules
+frontend/.next
+frontend/.vercel
+artifacts
+dist
+build
+*.egg-info

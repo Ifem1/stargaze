@@ -1,6 +1,6 @@
 # Live verification record
 
-Status: **LIVE VERIFICATION COMPLETE** for contract and scenarios A/B on stable GenLayer Studionet, chain `61999` (`0xF22F`). Reads and receipts were independently repeated against `https://studio.genlayer.com/api` on 2026-10-13.
+> **Audit follow-up (2026-10-13):** The deployment and scenarios recorded in the original sections below are historical pre-hardening evidence and are superseded. The canonical contract and live A/B evidence in [Hardened audit deployment](#hardened-audit-deployment) are authoritative for this release.
 
 ## Deployment
 
@@ -67,4 +67,43 @@ The deployed contract file checksum is recorded above, but the explorer does not
 
 ## Local application and hosting
 
-The local frontend is configured to read this verified contract from `frontend/.env.local` (ignored by Git). Start it with `npm --workspace frontend run dev` and visit `http://localhost:3000`. No Vercel deployment was performed; no Vercel credentials or project were configured in this workspace. No GitHub remote is configured; pushing remains the final step after a target repository URL is supplied.
+The local frontend is configured to read the final contract from `frontend/.env.local` (ignored by Git). The Vercel production and preview environment variable `NEXT_PUBLIC_STARGAZE_CONTRACT_ADDRESS` is set to the same address. The canonical production URL is https://stargaze-taupe.vercel.app.
+
+## Hardened audit deployment
+
+The final contract source includes canonical source URL and advisory-ID binding (including case-correct GHSA identifiers), fetched metadata identity checks, release-owner-only assessment requests, exact record identity confirmation in the frontend, and support for one to four frozen evidence sources. Direct Mode rejects approved-host unrelated paths and unauthorized assessment preemption.
+
+- Network: stable GenLayer Studionet, chain `61999` (`0xF22F`), RPC `https://studio.genlayer.com/api`.
+- Canonical contract: [`0xa3AfabB8af00ac53bDcf5C56ff8D445B39C6a620`](https://explorer-studio.genlayer.com/address/0xa3AfabB8af00ac53bDcf5C56ff8D445B39C6a620).
+- Deployment transaction: [`0xa77df9c05a2fe386566847807bfdb2794faab9ed76ceadae901c72f12a338362`](https://explorer-studio.genlayer.com/tx/0xa77df9c05a2fe386566847807bfdb2794faab9ed76ceadae901c72f12a338362), `FINALIZED`, `MAJORITY_AGREE`, five validator commits/reveals.
+- Deployed `contracts/stargaze.py` SHA-256: `b9e7ec5472a0b69a2f7bef901aaf821acdb8d634265ac20f48e35ae0626bd480`.
+- Final reads: chain ID `61999`; release counter `2`; assessment counter `2`; `rel-1` remains `SEALED`; `rel-2` has predecessor `rel-1`.
+
+The 2026-10-13 live sample uses GitHub advisory `GHSA-r5fr-rjxr-66jc`, revision `2026-04-01T23:51:13Z`, from `https://api.github.com/advisories/GHSA-r5fr-rjxr-66jc`, plus exact npm package-version metadata. The assessment packet SHA-256 values were `1c1918038e70d580485904b5c87aded72a36cbc92931df25012ab68d501255fb` (`asm-1`) and `f9ba581a469460110548738a8c2c26ce2b4b5a8cef8f47e2e99b66ff0a79f67d` (`asm-2`). Release/tarball identity details and registrant limitations are described above.
+
+| Final write | Studionet transaction | Final outcome |
+|---|---|---|
+| Authorize GitHub primary host | [`0x91266817e7ed4afd4af1c0bb414dcfd0bbd9916e85884708575046779a5409f3`](https://explorer-studio.genlayer.com/tx/0x91266817e7ed4afd4af1c0bb414dcfd0bbd9916e85884708575046779a5409f3) | `FINALIZED`, `MAJORITY_AGREE`, 3 agree / 2 idle |
+| Authorize npm supplemental host | [`0x86e62d19d7c8f2230648a30ff55a459083221dacb0e0bdcbe1fadb84a5bebbbf`](https://explorer-studio.genlayer.com/tx/0x86e62d19d7c8f2230648a30ff55a459083221dacb0e0bdcbe1fadb84a5bebbbf) | `FINALIZED`, `MAJORITY_AGREE`, 3 agree / 2 idle |
+| Register vulnerable `rel-1` | [`0x27021a8dfc85cbe2e20cc38c32be132b64c5e6a3362113f098a2699283da6b92`](https://explorer-studio.genlayer.com/tx/0x27021a8dfc85cbe2e20cc38c32be132b64c5e6a3362113f098a2699283da6b92) | `FINALIZED`, `MAJORITY_AGREE`, 5 agree |
+| Register successor `rel-2` | [`0xb2de6d0d68a76537f0dd480c46fe785e607a520d7199b8a85de38a4057d28109`](https://explorer-studio.genlayer.com/tx/0xb2de6d0d68a76537f0dd480c46fe785e607a520d7199b8a85de38a4057d28109) | `FINALIZED`, `MAJORITY_AGREE`, 3 agree / 2 idle |
+| Register vulnerable assessment `asm-1` | [`0x4f2908afd87db55e6da09110bc07321102eb2a4bbfbd686d25eb08109d40cf79`](https://explorer-studio.genlayer.com/tx/0x4f2908afd87db55e6da09110bc07321102eb2a4bbfbd686d25eb08109d40cf79) | `FINALIZED`, `MAJORITY_AGREE`, 3 agree / 2 idle |
+| Evaluate `asm-1` | [`0x2df19eb523ce73f7df9a19979c2c98467ea89dadcff2497fcb5d5046b96d2c4d`](https://explorer-studio.genlayer.com/tx/0x2df19eb523ce73f7df9a19979c2c98467ea89dadcff2497fcb5d5046b96d2c4d) | `FINALIZED`, leader and validator execution `SUCCESS`, 3 agree / 2 idle |
+| Register successor assessment `asm-2` | [`0x86c3638996ba507bb1647166a5d710766e61c0d2c02555f2490618d4c4baf5ab`](https://explorer-studio.genlayer.com/tx/0x86c3638996ba507bb1647166a5d710766e61c0d2c02555f2490618d4c4baf5ab) | `FINALIZED`, `MAJORITY_AGREE`, 3 agree / 2 idle |
+| Evaluate `asm-2` | [`0x528e5abd7955aea80d88934ebf842991d6b27abc9be3e07865faada425694aa4`](https://explorer-studio.genlayer.com/tx/0x528e5abd7955aea80d88934ebf842991d6b27abc9be3e07865faada425694aa4) | `FINALIZED`, leader and validator execution `SUCCESS`, 3 agree / 2 idle |
+
+| Scenario | Frozen record | Verdict / authorization | Gate result |
+|---|---|---|---|
+| A: vulnerable original | `rel-1` / `asm-1`, packet `1c1918038e70d580485904b5c87aded72a36cbc92931df25012ab68d501255fb` | `AFFECTED` / `BLOCKED` | `HOLD` (`REQUIRED_REVISION_NOT_CLEARED`) |
+| B: patched successor | `rel-2` / `asm-2`, packet `f9ba581a469460110548738a8c2c26ce2b4b5a8cef8f47e2e99b66ff0a79f67d` | `NOT_AFFECTED` / `AUTHORIZED_FOR_THIS_ADVISORY` | `AUTHORIZED_FOR_POLICY_SET` |
+
+The exact required policy was `[ {"advisory_id":"GHSA-r5fr-rjxr-66jc","revision":"2026-04-01T23:51:13Z"} ]`. A fresh read against the production website returned HTTP 200; its shipped JavaScript contains the canonical contract address. Using the same GenLayer SDK/network definition as the frontend, production verification read chain `61999`, both releases, both assessments and their outcomes, and both gates from the canonical contract.
+
+### Tests and remaining trust
+
+- Contract Direct Mode/adversarial: **18 passed**, including host-path rejection, case-correct GHSA identity, response metadata mismatch, unauthorized assessment preemption, duplicate release/assessment identities, prompt injection, leader/validator conflict and lineage.
+- Gate: **9 passed**. Frontend wallet, evidence-source and exact-record confirmation tests: **13 passed**. Contract lint, GenVM preflight, schema, frontend lint, TypeScript checks and production build all passed locally.
+- Final Vercel deployment `dpl_J7tavai5sR5w6bxvgasvmokqo8RZ` is Ready at https://stargaze-taupe.vercel.app. The public environment variable is set for Production and Preview. The last production read check returned HTTP 200, found the canonical address in its served JavaScript, and read both records and gates from Studionet.
+- No independent explorer source-verification badge is claimed. HTTPS metadata can still be compromised or inaccurate; host/role allow-list administration remains a trust input; models and validators can agree on an incorrect interpretation. Registration records registrant claims and digest commitments but does not prove publisher control or binary provenance. The live wallet was a funded throwaway test account, not a production signer.
+
+An earlier hardened deployment attempt used an uppercase-only GHSA character class. Its first assessment write rolled back with `Primary source URL must be a canonical endpoint for the frozen advisory ID`. The case-insensitive grammar was corrected, retested and redeployed at the canonical address above; the failed address/transaction is not presented as final, and both live scenarios were rerun on the final address.

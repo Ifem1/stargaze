@@ -15,6 +15,6 @@ Run `npm ci` at the repository root, Python 3.12 with `pip install -e '.[test]'`
 
 ## Stable deployment
 
-Use the local `tooling/node_modules/.bin/genlayer` binary (or its Windows `.cmd` shim), never a global executable. The deploy command must use `https://studio.genlayer.com/api` explicitly. Record the source SHA-256, deploy transaction hash, contract address and finalized receipt in `docs/LIVE_VERIFICATION.md`. The active deployment and live A/B evidence are recorded there. Configure that verified address in `frontend/.env.local` for localhost; production deployment requires a separate configured target.
+Use the repository-local `node_modules/.bin/genlayer` binary (or `node_modules/.bin/genlayer.cmd` on Windows), never a global executable. The deploy command must use `https://studio.genlayer.com/api` explicitly. Record the source SHA-256, deploy transaction hash, contract address and finalized receipt in `docs/LIVE_VERIFICATION.md`. The active deployment and live A/B evidence are recorded there. Configure that verified address in `frontend/.env.local` for localhost and in the STARGAZE Vercel project's `NEXT_PUBLIC_STARGAZE_CONTRACT_ADDRESS` for production and preview.
 
 Deployment used a funded throwaway Studionet wallet after the user explicitly authorized that deployment and live cycle. Never reuse that wallet for production. Its contract ownership and registered release claims do not assert upstream project ownership or source provenance.

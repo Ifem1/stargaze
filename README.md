@@ -33,4 +33,6 @@ See [deployment](docs/DEPLOYMENT.md) before any public write. Public deployment 
 
 ## Live evidence
 
-**Live contract and both advisory scenarios verified.** The active Studionet contract, finalized receipts, validator outcomes, packet commitments, and authorization gates are recorded in [live verification](docs/LIVE_VERIFICATION.md). The localhost app uses that contract. No Vercel deployment or GitHub push has been performed.
+**Hardened contract and both advisory scenarios verified.** The canonical Studionet contract is [`0xa3AfabB8af00ac53bDcf5C56ff8D445B39C6a620`](https://explorer-studio.genlayer.com/address/0xa3AfabB8af00ac53bDcf5C56ff8D445B39C6a620). The production frontend is [stargaze-taupe.vercel.app](https://stargaze-taupe.vercel.app), configured to read this address. Deployment, transaction receipts, validator outcomes, packet commitments, both gates and the production read check are recorded in [live verification](docs/LIVE_VERIFICATION.md). The source repository is [github.com/Ifem1/stargaze](https://github.com/Ifem1/stargaze).
+
+The contract source is not shown as explorer-verified. Release registration proves a submitter's declared identity and artifact digest; it does not establish publisher ownership or binary provenance. Semantic consensus is evidence of validator agreement under this protocol, not proof that model classification is universally correct. See [security limits](docs/SECURITY.md) and the [live evidence record](docs/LIVE_VERIFICATION.md).
