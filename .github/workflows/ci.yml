@@ -1,0 +1,37 @@
+name: CI
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install -e ".[test]"
+      - run: python scripts/run_genvm_lint.py validate contracts/stargaze.py
+      - run: pytest -q
+      - run: python scripts/run_genvm_lint.py check contracts/stargaze.py
+      - run: python scripts/run_genvm_lint.py schema contracts/stargaze.py
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - run: npm ci
+      - run: npm audit --omit=dev
+      - run: npm exec -- genlayer --version
+      - run: npm run typecheck:gate
+      - run: npm run test:gate
+      - run: npm --workspace frontend run lint
+      - run: npm --workspace frontend run typecheck
+      - run: npm --workspace frontend test -- --run
+      - run: npm --workspace frontend run build

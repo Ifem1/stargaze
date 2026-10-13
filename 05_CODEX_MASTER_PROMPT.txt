@@ -1,0 +1,55 @@
+STARGAZE — FULL AUTONOMOUS CODEX BUILD INSTRUCTION
+
+You are the lead implementation engineer for STARGAZE. The user has approved the product and visual identity. This ZIP is a complete handoff. Build the project end-to-end from the extracted local folder. Do not stop after creating a spec, prototype, unfinished scaffold, or basic contract; finish every component you can execute safely.
+
+READ THESE FILES FIRST, IN ORDER:
+00_START_HERE.md
+06_IMPLEMENTATION_DECISIONS.md
+01_STARGAZE_MASTER_BUILD_SPEC.md
+02_STARGAZE_FRONTEND_VISUAL_SPEC.md
+03_STARGAZE_SECURITY_AND_REVIEWER_GATES.md
+04_STARGAZE_LIVE_VERIFICATION_PLAN.md
+07_ACCEPTANCE_AND_SUBMISSION_GATES.md
+
+CONFLICT RULE: 06_IMPLEMENTATION_DECISIONS.md supersedes older examples. Acceptance checklist 07 sets proof gates.
+
+MISSION
+Deliver a complete, original, reviewer-grade GenLayer Intelligent Contract project called STARGAZE. Product: an advisory-scoped software-release exposure and release-authorization system. It evaluates whether an **exact immutable declared software release** is affected by an **exact authoritative vulnerability advisory revision**, records a consensus-backed assessment and exposes a conservative gate that blocks risky releases and may authorize a verified successor for the assessed policy set. This is NOT a product-recall clone, crypto price predictor, general scanner, binary-attestation oracle, or claim that software is universally secure.
+
+HARD NETWORK/TOOLCHAIN CONSTRAINTS
+- STABLE StudioNet chain ID **61999** (`0xF22F`) only; RPC https://studio.genlayer.com/api ; Explorer https://explorer-studio.genlayer.com . NEVER deploy or point the UI to Studio Dev/Next (61997).
+- Use compatible **repo-local CLI 0.39.1** rather than any global `0.40.0rc` or later incompatible RC. Pin GenLayerJS and Python dependencies compatible with this environment. Verify tool signatures and exact runtime return shapes rather than making assumptions.
+- Use official `gl.vm.run_nondet_unsafe` correctly if suitable; validator must independently reevaluate all frozen sources and compare the deterministic EVIDENCE COMMITMENT/ELIGIBILITY as well as the exact classified label. Avoid a label-only comparison of distinct evidence packets.
+- No browser key generation, localStorage private keys, WalletConnect/Privy/WorkOS, off-chain settlement authority, fabricated on-chain data, or fake security-verification claims.
+
+REQUIRED IMPLEMENTATION
+(1) Primary Python Intelligent Contract `contracts/stargaze.py` with strongly validated releases, frozen/advisory-scoped assessments, trusted HTTPS source rules, immutable predecessor/successor lineage, bounded persistence and paginated readers. Semantic LLM classification limited to AFFECTED, NOT_AFFECTED, CONDITIONAL, INSUFFICIENT_EVIDENCE. Deterministic fail-closed normalization and policy-scoped authorization. No mutation that erases the original exposure.
+(2) Downstream CLI enforcement consumer which reads the FINALIZED accepted on-chain state afresh, validates chain+contract+exact artifact digest+nonempty advisory revision policy set, then either refuses or executes an argv-based protected command. Tests must prove the command never executes on denial, missing/invalid reads or uncertainty.
+(3) Full **Next.js App Router + TS + Tailwind + Framer Motion** frontend. Pages: Overview, Releases, Register Release, Advisory Assessments, Release Detail, Release Lineage, Authorization Gate and Docs. All primary controls functional. Contract is source of truth. Real paginated records, good empty states, actual wallet writes, receipt/finality handling, explorer links, real lineage.
+(4) Distinct brand. Use the USER'S approved restrained dark-pink gradient: layered wine/raspberry/magenta with brighter pink bloom in selected areas and darker corners. Subtle low-frequency tiny metallic gold/silver sparkle motion, responsive and reduced-motion friendly. No giant planet, overloaded stars, endless glow, emojis or excessive icons. Cards glow delicately on hover. Custom original five-point STAR+S logo and favicon SVG. Attractive typography with legible data tables.
+(5) Wallet. Injected EIP-1193 only. Connected wallet click OPENS a popover with **Copy Address / View in Explorer / Disconnect**. Wrong-network chip click requests **switch to 61999**, with support for chain add on unknown chain; rejects gracefully. Correct hard gating on all writes; account/chain changes, stale async ops, rejected signatures, refresh recovery. No direct chain switch by page load.
+(6) Tests and CI. Python + Direct Mode genuine execution and adversarial tests, validator leader-maliciousness/different packets, source-authority confusion, malformed outputs, outage/truncation, replay/duplicate, semantic prompt injection, lineage mutation/cycles, policy coverage, gate failure, front-end unit/integration, wallet network and finality. GenVM lint/validate/schema/typecheck, compatible CLI preflight, Node lint/typecheck/build, Github Actions. Do not misrepresent skipped tests as passes.
+(7) Reproducible deployment and independent live demonstration scripts for StudioNet 61999, docs/ARCHITECTURE.md, docs/SECURITY.md, docs/DEPLOYMENT.md, docs/LIVE_VERIFICATION.md, polished README, screenshots when actually obtained, exact source/tx/address/CI links. Ensure live frontend uses canonical contract.
+
+IMPLEMENTATION ORDER — DO NOT SKIP
+A. Inspect extracted docs and actual available repo contents; ensure no unrelated origin is set. Produce concise architecture and interface plan for your own implementation, then BUILD.
+B. Implement bounded contract and executable Direct Mode tests first. Verify validator agreement on real returned scalar/digest envelope shapes. Test all four verdict classes and failure modes. Validate official runtime APIs.
+C. Build real downstream fail-closed gate plus tests. Never authorize from a single favorable result if policy requires more than one advisory revision.
+D. Build refined production-quality responsive frontend, real contract reads/writes, wallet and transaction manager. No fabricated production entries or placeholder buttons.
+E. Run full local CI/test and correct issues. Pin dependencies, protect secrets.
+F. Deploy to STABLE 61999 **only when authorized account/network access and funding are available**; inspect actual receipts. Do not invent deployment txs. Deploy final tested source, not a diagnostic build.
+G. Demonstrate **BOTH** actual end-to-end paths using truthful authoritative advisory and real artifact/patch examples: AFFECTED -> gate BLOCKS; successor NOT_AFFECTED for same advisory revision -> gate AUTHORIZES; previous release remains AFFECTED. Capture successful execution/consensus/finality and gate log. If authoritative live sources cannot verify, report `LIVE NOT VERIFIED`, never claim success or loosen security gates to force a green result.
+H. Reconcile README, deployment docs, scripts, app env, Vercel and CI to a single canonical address; complete audit in 07_ACCEPTANCE_AND_SUBMISSION_GATES.md.
+
+SELF-DIRECTION
+Use your judgment for reasonable implementation details. Fix engineering problems without asking the user routine followups. Do NOT ask the user to manually write files or implement tests. Do NOT repeatedly pause to request approval on code structure. Ask only when external permissions/assets are genuinely necessary (target GitHub repo URL, authenticated GitHub/Vercel access, funded deployment wallet, live deployment approval). Without a target GitHub repo, build locally and request URL before remote push. Never push to a guessed repository. Keep one principal contract; no needless escrow, multichain, microservices or feature sprawl.
+
+FINAL RESPONSE FORMAT
+1. GitHub repository (if target provided), latest commit, clean working tree, exact CI run.
+2. Local tests and direct-mode/linter/preflight/frontend counts, with failures/skips explicitly named.
+3. Stable network deployed contract address, deploy tx, source digest; or `NOT DEPLOYED — <blocker>`.
+4. Live Scenario A & B: full tx hashes, verdicts, final states, evidence sources, exact gate result; or `LIVE NOT VERIFIED — <reason>`.
+5. Vercel production URL and real wallet/browser smoke checks; or specific blocker.
+6. Outstanding issues. Say `READY TO SUBMIT` only if acceptance gates are actually verified. No unfounded 5/5/5/5 guarantee.
+
+START NOW. Implement the full project, not another plan.

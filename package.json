@@ -1,0 +1,23 @@
+{
+  "name": "stargaze-workspace",
+  "private": true,
+  "workspaces": [
+    "frontend"
+  ],
+  "scripts": {
+    "test:gate": "vitest run tests/gate.test.ts",
+    "typecheck:gate": "tsc --noEmit -p tsconfig.gate.json",
+    "test:frontend": "npm --workspace frontend test -- --run",
+    "lint:contract": "genvm-lint check contracts/stargaze.py",
+    "preflight:contract": "genvm-lint validate contracts/stargaze.py",
+    "schema:contract": "genvm-lint schema contracts/stargaze.py"
+  },
+  "devDependencies": {
+    "genlayer": "0.39.1",
+    "genlayer-js": "1.1.8",
+    "motion-dom": "12.23.12",
+    "motion-utils": "12.23.6",
+    "tsx": "4.20.5",
+    "vitest": "5.0.4"
+  }
+}

@@ -1,0 +1,122 @@
+import { createHash } from 'node:crypto';
+import { spawn } from 'node:child_process';
+import { readFile } from 'node:fs/promises';
+import { createClient } from 'genlayer-js';
+import { studionet } from 'genlayer-js/chains';
+import { TransactionHashVariant } from 'genlayer-js/types';
+
+export const CHAIN_ID = 61999;
+export const RPC_URL = 'https://studio.genlayer.com/api';
+export const EXPLORER_URL = 'https://explorer-studio.genlayer.com';
+
+type Assessment = {
+  id: string; release_id: string; advisory_id: string; revision: string;
+  state: string; verdict: string; eligible: boolean; packet_digest: string;
+};
+type Release = { id: string; artifact_digest: string; status: string };
+export type Policy = {
+  chain_id: number; contract_address: string; release_id: string;
+  artifact_digest: string; required: Array<{ advisory_id: string; revision: string }>;
+};
+export type FinalReader = {
+  getRelease(id: string): Promise<unknown>;
+  getAssessment(id: string): Promise<unknown>;
+};
+
+function fail(message: string): never { throw new Error(message); }
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+const isDigest = (value: unknown): value is string => typeof value === 'string' && /^[a-f0-9]{64}$/.test(value);
+
+export function validatePolicy(value: unknown): Policy {
+  if (!isRecord(value) || value.chain_id !== CHAIN_ID) fail('DENY: policy must target Studionet chain 61999.');
+  if (typeof value.contract_address !== 'string' || !/^0x[a-fA-F0-9]{40}$/.test(value.contract_address)) fail('DENY: invalid contract address.');
+  if (typeof value.release_id !== 'string' || value.release_id.length < 5) fail('DENY: invalid release ID.');
+  if (!isDigest(value.artifact_digest)) fail('DENY: invalid artifact SHA-256.');
+  if (!Array.isArray(value.required) || value.required.length < 1 || value.required.length > 50) fail('DENY: explicit non-empty advisory revision policy is required.');
+  const seen = new Set<string>();
+  for (const pair of value.required) {
+    if (!isRecord(pair) || typeof pair.advisory_id !== 'string' || !pair.advisory_id || typeof pair.revision !== 'string' || !pair.revision) fail('DENY: malformed advisory revision requirement.');
+    const key = `${pair.advisory_id}\0${pair.revision}`;
+    if (seen.has(key)) fail('DENY: duplicate advisory revision requirement.');
+    seen.add(key);
+  }
+  return value as unknown as Policy;
+}
+
+export async function evaluateFinalPolicy(policyInput: unknown, reader: FinalReader) {
+  const policy = validatePolicy(policyInput);
+  const releaseRaw = await reader.getRelease(policy.release_id);
+  if (!isRecord(releaseRaw)) fail('DENY: release read failed or malformed.');
+  const release = releaseRaw as unknown as Release;
+  if (release.id !== policy.release_id || release.status !== 'SEALED' || release.artifact_digest !== policy.artifact_digest) fail('DENY: release identity or artifact digest mismatch.');
+
+  const verified = [];
+  for (const required of policy.required) {
+    let found: Assessment | undefined;
+    for (let offset = 0; offset < 10000; offset += 50) {
+      const pageRaw = await (reader as FinalReader & { listAssessments?: (offset: number, limit: number) => Promise<unknown> }).listAssessments?.(offset, 50);
+      if (!Array.isArray(pageRaw)) fail('DENY: final assessment registry read failed or malformed.');
+      for (const raw of pageRaw) {
+        if (isRecord(raw) && raw.release_id === policy.release_id && raw.advisory_id === required.advisory_id && raw.revision === required.revision) found = raw as unknown as Assessment;
+      }
+      if (pageRaw.length < 50) break;
+    }
+    if (!found || found.state !== 'DECIDED' || found.verdict !== 'NOT_AFFECTED' || found.eligible !== true || !isDigest(found.packet_digest)) fail(`DENY: required revision ${required.advisory_id}@${required.revision} is not finally cleared.`);
+    verified.push({ advisory_id: required.advisory_id, revision: required.revision, assessment_id: found.id, packet_digest: found.packet_digest });
+  }
+  const policyDigest = createHash('sha256').update(JSON.stringify({ domain: 'STARGAZE_GATE_POLICY_V1', chain_id: CHAIN_ID,
+    contract_address: policy.contract_address.toLowerCase(), release_id: policy.release_id,
+    artifact_digest: policy.artifact_digest, required: [...policy.required].sort((a, b) => `${a.advisory_id}@${a.revision}`.localeCompare(`${b.advisory_id}@${b.revision}`)) })).digest('hex');
+  return { decision: 'AUTHORIZED_FOR_POLICY_SET', chain_id: CHAIN_ID, contract_address: policy.contract_address,
+    release_id: policy.release_id, artifact_digest: policy.artifact_digest, policy_digest: policyDigest, verified };
+}
+
+export async function authorizeThenExecute(
+  policyInput: unknown,
+  reader: FinalReader,
+  execute: () => Promise<number>,
+) {
+  const authorization = await evaluateFinalPolicy(policyInput, reader);
+  const exitCode = await execute();
+  return { authorization, exitCode };
+}
+
+async function checkRpcChainId() {
+  const response = await fetch(RPC_URL, { method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_chainId', params: [] }), signal: AbortSignal.timeout(12000) });
+  if (!response.ok) fail(`DENY: Studionet RPC returned HTTP ${response.status}.`);
+  const body: unknown = await response.json();
+  if (!isRecord(body) || body.result !== '0xf22f') fail('DENY: RPC did not confirm chain 61999.');
+}
+
+async function main() {
+  const separator = process.argv.indexOf('--');
+  if (separator < 3 || process.argv.length <= separator + 1) fail('Usage: tsx scripts/gate.ts <policy.json> -- <protected-command> [args...]');
+  const [, , policyPath] = process.argv;
+  const contractAddress = process.env.STARGAZE_CONTRACT_ADDRESS;
+  if (!contractAddress || !/^0x[a-fA-F0-9]{40}$/.test(contractAddress)) fail('DENY: STARGAZE_CONTRACT_ADDRESS is missing or invalid.');
+  const policy = validatePolicy(JSON.parse(await readFile(policyPath, 'utf8')));
+  if (policy.contract_address.toLowerCase() !== contractAddress.toLowerCase()) fail('DENY: policy contract does not match configured canonical contract.');
+  if (studionet.id !== CHAIN_ID) fail('DENY: installed GenLayerJS Studionet definition is not chain 61999.');
+  await checkRpcChainId();
+  const client = createClient({ chain: studionet });
+  const reader: FinalReader & { listAssessments: (offset: number, limit: number) => Promise<unknown> } = {
+    getRelease: (id) => client.readContract({ address: policy.contract_address as `0x${string}`, functionName: 'get_release', args: [id], transactionHashVariant: TransactionHashVariant.LATEST_FINAL }),
+    getAssessment: (id) => client.readContract({ address: policy.contract_address as `0x${string}`, functionName: 'get_assessment', args: [id], transactionHashVariant: TransactionHashVariant.LATEST_FINAL }),
+    listAssessments: (offset, limit) => client.readContract({ address: policy.contract_address as `0x${string}`, functionName: 'list_assessments', args: [offset, limit], transactionHashVariant: TransactionHashVariant.LATEST_FINAL }),
+  };
+  const command = process.argv[separator + 1];
+  const args = process.argv.slice(separator + 2);
+  const { authorization, exitCode } = await authorizeThenExecute(policy, reader, () => new Promise<number>((resolve, reject) => {
+    const child = spawn(command, args, { shell: false, stdio: 'inherit', env: process.env });
+    child.on('error', reject);
+    child.on('exit', (code, signal) => resolve(code ?? (signal ? 128 : 1)));
+  }));
+  process.stdout.write(`${JSON.stringify(authorization, null, 2)}\n`);
+  process.exitCode = exitCode;
+}
+
+if (import.meta.url === `file://${process.argv[1]?.replaceAll('\\', '/')}`) {
+  main().catch((error: unknown) => { process.stderr.write(`${error instanceof Error ? error.message : 'DENY: unknown gate failure'}\n`); process.exitCode = 1; });
+}
