@@ -6,6 +6,7 @@
   ],
   "scripts": {
     "test:gate": "vitest run tests/gate.test.ts",
+    "test:replay": "vitest run tests/replay_evidence.test.mjs",
     "typecheck:gate": "tsc --noEmit -p tsconfig.gate.json",
     "test:frontend": "npm --workspace frontend test -- --run",
     "lint:contract": "python scripts/run_genvm_lint.py check contracts/stargaze.py",

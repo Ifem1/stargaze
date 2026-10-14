@@ -14,7 +14,7 @@ An assessment allows at most three attempts. Only an `OPEN` request or an object
 
 ## Source authority, revocation and residual trust
 
-The contract owner controls exact lower-case host/role permissions. URL paths are separately constrained to canonical provider endpoints. Revocation is role-scoped, increments that source trust epoch, suspends pending requests using it, and blocks current authorization for prior decisions using the epoch. Reauthorization cannot revive them; the owner must register a fresh request with a new content-addressed revision. Attempts and decisions are never edited or erased.
+The contract owner controls exact lower-case host/role permissions. URL paths are separately constrained to canonical provider endpoints. Revocation is role-scoped, increments that source trust epoch, suspends pending requests using it, and blocks current authorization for prior decisions using the epoch. Reauthorization cannot revive an old approval. A new trust-epoch assessment is allowed only with the same frozen source set and is independently versioned in append-only history. Prior substantive outcomes, especially AFFECTED, cannot be reattested; operational recovery does not permit verdict shopping. Attempts and decisions are never edited or erased.
 
 TLS/API infrastructure, provider data, and configured host policy remain trust inputs. A compromised source can publish false information. Independent validators may agree on an incorrect semantic interpretation. The protocol commits to observed bounded response bytes and consensus, not truth. Archived source bytes support later replay but do not establish publisher control or build provenance. Release digests remain registrant declarations.
 

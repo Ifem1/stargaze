@@ -23,7 +23,7 @@ Each manifest row stores frozen URL, role/kind, HTTP status, exact body SHA-256 
 
 Source authorization and emergency revocation are owner-only and scoped to an exact `(hostname, role)`. Revocation increments that role's epoch. Pending work using the old epoch is suspended; previous results remain immutable, while the authorization view blocks current promotion. Reauthorization increments the epoch again and does not restore an old result. A fresh assessment under a new authenticated content revision is required.
 
-`authorization_for_release()` validates a bounded, nonempty, duplicate-free policy and performs one identity-index read for each exact pair. It requires a `DECIDED`, complete, authenticated `NOT_AFFECTED` record with the current source epochs. Missing, affected, revoked, incomplete, invalid, or unfinalized state returns `HOLD`.
+The compact authorization_for_release_compact view accepts up to five packed SHA-256 identity commitments, rejects malformed or duplicate entries, and performs one identity-index read per exact pair. The legacy JSON view remains available for compatibility.
 
 ## TypeScript gate and frontend
 

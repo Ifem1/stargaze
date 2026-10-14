@@ -1,40 +1,22 @@
-# STARGAZE steward closeout
+# STARGAZE final engineering closeout
 
-**State:** hardened implementation, stable Studionet deployment, live A/B assessment and gate proof, and Production readback are complete. Final CI status and repository push remain outstanding.
+Canonical deployment (2026-10-14): Stable Studionet 61999, address [0xDf2961e690E1eEE004C443eAB10c389113C7Bd6a](https://explorer-studio.genlayer.com/address/0xDf2961e690E1eEE004C443eAB10c389113C7Bd6a), transaction [0xc73c96a3628af052cc93536c10e450a8d1097f18cc37c12c3aa9242969350c3d](https://explorer-studio.genlayer.com/tx/0xc73c96a3628af052cc93536c10e450a8d1097f18cc37c12c3aa9242969350c3d). Source SHA-256: 44ef3c31b58084da690263cc9d7c05debba319d920d509462b0046077753da12.
 
-## Hardened audit changes
+## Completed evidence
 
-- Advisory identity is bound to canonical primary URLs and frozen GHSA/OSV identifiers. Returned metadata is checked against the requested advisory, package and ecosystem; exact primary bytes must match the frozen revision. Arbitrary paths on an allow-listed hostname fail closed.
-- Assessment registration is restricted to the release owner, preventing unauthorized callers from preempting another release's assessment identity. Duplicate identities and cross-release attempts are rejected.
-- The frontend supports one through four frozen evidence sources with required roles and stable sorting. Record confirmation checks the exact record identity and sequence. Injected-wallet popover actions and Studionet network switching remain.
-- Contract history is append-only; successor lineage and per-source evidence commitments remain visible. Authorization is scoped to the exact release, artifact and required advisory revision set.
+- Deployment finalized MAJORITY_AGREE; leader execution SUCCESS; five validators agreed. The repository-local GenLayer CLI was 0.39.1; chain/RPC were checked as 61999 and https://studio.genlayer.com/api.
+- RPC getContractCode returned 44,006 bytes byte-for-byte equal to contracts/stargaze.py. Both hashes are 44ef3c31b58084da690263cc9d7c05debba319d920d509462b0046077753da12. RPC schema exposes 22 methods, including authorization_for_release_compact. See evidence/live/deployed-source-parity.json. This is RPC byte parity, not an explorer source-verification badge.
+- Finalized reads show rel-1 (Lodash 4.17.23) remains AFFECTED, and successor rel-2 (Lodash 4.18.0) remains NOT_AFFECTED. Packets: ee6fdb427b27972be433b196debeec109100c2a1ef1330841ebcd675d393829a and bd7f21a5fc4492d93acb1024107d697b28a0df05bcc6e8b39c0dc62fa6a6f602.
+- Compact authorization returned AUTHORIZED_FOR_POLICY_SET for the single cleared GHSA requirement. Adding an unresolved OSV revision returned HOLD / REQUIRED_REVISION_NOT_CLEARED without the prior RLP decoding error. This does not establish two separately cleared advisories.
+- OSV evaluation tx 0xedb8a5d5ec217e5dd1a03ebfcb1d02153a674a8cf353049620b2482ac34b309c finalized MAJORITY_DISAGREE in round 3, with three disagree votes and leader execution SUCCESS. It did not create a semantic decision.
+- The prior archived GHSA packet replayed MATCH with 13,001 source bytes verified. Replay tests cover earlier failed attempts, successful recovery, tampering, missing snapshots, mismatched identities and later appended attempts.
+- Local tests: 33 Direct Mode, 16 gate, 7 replay and 19 frontend (75 total). GenVM lint/preflight/schema, TypeScript checks, ESLint and optimized build passed.
 
-## Verification
+## Outstanding
 
-- Direct Mode adversarial contract suite: **28 passed**.
-- Downstream gate suite: **15 passed**.
-- Frontend suite: **19 passed**.
-- Contract lint, GenVM validation/preflight, schema check (20 methods: 15 views, 5 writes), gate typecheck, frontend lint/typecheck/build passed. `npm audit --omit=dev` previously reported zero vulnerabilities.
-- Stable Studionet chain `61999` (`0xF22F`), repository-local CLI `0.39.1`.
-
-## Canonical deployment and live proof
-
-- Contract: [`0xb47A5B73D31007e38264A89998a7eBfD7Be46144`](https://explorer-studio.genlayer.com/address/0xb47A5B73D31007e38264A89998a7eBfD7Be46144)
-- Deployment transaction: [`0xd43414bc64d4be0d3676f0781d3589bf33a8159c5c8ed1e8e131d0c68da0bc23`](https://explorer-studio.genlayer.com/tx/0xd43414bc64d4be0d3676f0781d3589bf33a8159c5c8ed1e8e131d0c68da0bc23)
-- Deployed contract source SHA-256: `d809a55066574ea367b8dd4c630261fd479ae53244694798602deb9d0dfb0fe6`.
-- Deployment receipt: `ACCEPTED`, `MAJORITY_AGREE`, leader execution `SUCCESS`, 5/5 agree.
-- Scenario A: `rel-1` / `asm-1` finalized `AFFECTED`, evidence complete and revision authenticated, authorization `BLOCKED`; exact downstream policy exited 1 and did not execute the protected command. Evidence packet `ee6fdb427b27972be433b196debeec109100c2a1ef1330841ebcd675d393829a` replays from captured source bytes (`MATCH`, 13,001 bytes verified).
-- Scenario B: successor `rel-2` / `asm-2` finalized `NOT_AFFECTED`, evidence complete and revision authenticated, authorization `AUTHORIZED_FOR_THIS_ADVISORY`; exact successor policy exited 0 and executed the protected command. Packet `bd7f21a5fc4492d93acb1024107d697b28a0df05bcc6e8b39c0dc62fa6a6f602`. The predecessor remains in lineage and historically affected.
-- Additional OSV attempt `asm-3` finalized `INVALID_REVISION` with `PRIMARY_REVISION_UNAUTHENTICATED`, no verdict and no authorization. The fetched body hash differed from the frozen OSV revision. Its transaction reached `MAJORITY_AGREE` with 3 agree, 1 disagree and 1 idle; this is a majority result, not unanimous validator agreement.
-- The combined GHSA+OSV gate read was denied after the RPC returned `RLP string ends with 308 superfluous bytes`. This is recorded as an RPC error, not represented as an authoritative policy HOLD. Live retry/recovery and revocation scenarios were not run.
-- Current readback confirms chain `61999`, release counter `2`, assessment counter `3`; see `evidence/live/production-readback.json`. Gate output and execution markers are in `evidence/live/gates/`; source captures and replay inputs are under `evidence/`.
-
-## Publication
-
-- README now identifies the actual repository: [github.com/Ifem1/stargaze](https://github.com/Ifem1/stargaze).
-- Vercel Production is `READY` at [stargaze-taupe.vercel.app](https://stargaze-taupe.vercel.app). The served bundle includes the canonical contract address and a real SDK read returned chain `61999` and the current `2` releases / `3` assessments. Preview is also `READY` and its address variable is configured; deployment protection prevented an anonymous bundle-parity check, so Preview bundle parity is not claimed.
-- Final commit and GitHub Actions result are pending the local commit/push attempt. No green CI result is claimed for this closeout revision yet.
-
-## Trust limits
-
-Advisory responses are fetched over HTTPS and may change or be compromised; source allow-list administration is a trust input. Semantic consensus can still agree on an incorrect interpretation. A registered artifact digest is a registrant's claim and does not prove publisher control, build provenance or deployed binary identity. No explorer source-verification badge is claimed. A funded throwaway wallet was used for test deployment and live scenarios; it is not a production signer.
+- No two-distinct-advisory live clearance has been established.
+- Live retry/recovery and revoke/reauthorize reattestation were not demonstrated. Direct Mode tests cover the bounded recovery and trust-epoch protections; no outage was simulated.
+- No injected EIP-1193 provider was available in the browser profile. Real connect/disconnect/reconnect, network switch/rejection, and a frontend-originated transaction remain unverified and require an authorized wallet session.
+- Vercel Production and Preview environment variables were aligned to the canonical address. Production deployment `dpl_BHxkbJbSBD6fuQxB6mgCA6qSxd8h` is READY and aliased to https://stargaze-taupe.vercel.app. Production readback returned HTTP 200, bundle contains the canonical contract, Studionet chain 61999, two releases and three assessments (evidence/live/production-readback.json).
+- GitHub Actions will run the seven historical replay tests on the closeout commit; the prior run predates this workflow addition.
+- Explorer source verification is not claimed. Older deployment addresses in repository history are superseded; the address above is canonical for this source revision.

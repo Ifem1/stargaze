@@ -1,0 +1,14 @@
+{
+  "checkedAt": "2026-10-14T12:43:52.153Z",
+  "chainId": 61999,
+  "rpc": "https://studio.genlayer.com/api",
+  "address": "0xDf2961e690E1eEE004C443eAB10c389113C7Bd6a",
+  "localBytes": 44006,
+  "remoteBytes": 44006,
+  "localSha256": "44ef3c31b58084da690263cc9d7c05debba319d920d509462b0046077753da12",
+  "remoteSha256": "44ef3c31b58084da690263cc9d7c05debba319d920d509462b0046077753da12",
+  "byteForByteMatch": true,
+  "schemaMethodCount": 22,
+  "compactAuthorizationPresent": true,
+  "explorerVerifiedBadge": false
+}

@@ -31,6 +31,7 @@ jobs:
       - run: npm exec -- genlayer --version
       - run: npm run typecheck:gate
       - run: npm run test:gate
+      - run: npm run test:replay
       - run: npm --workspace frontend run lint
       - run: npm --workspace frontend run typecheck
       - run: npm --workspace frontend test -- --run

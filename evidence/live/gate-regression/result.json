@@ -1,0 +1,34 @@
+{
+  "checkedAt": "2026-10-14T12:46:35.754Z",
+  "chainId": 61999,
+  "contract": "0xDf2961e690E1eEE004C443eAB10c389113C7Bd6a",
+  "records": [
+    {
+      "name": "scenario-a-blocked",
+      "releaseId": "rel-1",
+      "exitCode": 1,
+      "protectedCommandExecuted": false,
+      "stdout": "",
+      "stderr": "DENY: authoritative contract gate did not authorize the exact policy set.\n",
+      "passed": true
+    },
+    {
+      "name": "scenario-b-authorized",
+      "releaseId": "rel-2",
+      "exitCode": 0,
+      "protectedCommandExecuted": true,
+      "stdout": "{\n  \"decision\": \"AUTHORIZED_FOR_POLICY_SET\",\n  \"chain_id\": 61999,\n  \"contract_address\": \"0xDf2961e690E1eEE004C443eAB10c389113C7Bd6a\",\n  \"release_id\": \"rel-2\",\n  \"artifact_digest\": \"aef19210308907f32d1b1d54f40e3cf461dbddae5605efe4027d6646c6967fb0\",\n  \"policy_digest\": \"c3f65ff9b0bdcd3be68223021d621d0aa5ccd173eebf91f33dd06c727acc0d97\",\n  \"verified\": [\n    {\n      \"advisory_id\": \"GHSA-r5fr-rjxr-66jc\",\n      \"revision\": \"ghsa-sha256:3db586ba1c68306eb90349477e0491f239b1bba1c09e35c781529c5ff7bb10c4\",\n      \"assessment_id\": \"asm-2\",\n      \"packet_digest\": \"bd7f21a5fc4492d93acb1024107d697b28a0df05bcc6e8b39c0dc62fa6a6f602\"\n    }\n  ]\n}\n",
+      "stderr": "",
+      "passed": true
+    },
+    {
+      "name": "two-requirements-hold",
+      "releaseId": "rel-2",
+      "exitCode": 1,
+      "protectedCommandExecuted": false,
+      "stdout": "",
+      "stderr": "DENY: authoritative contract gate did not authorize the exact policy set.\n",
+      "passed": true
+    }
+  ]
+}
