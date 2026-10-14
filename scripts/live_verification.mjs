@@ -27,6 +27,11 @@ const read = (client, address, functionName, args = []) => client.readContract({
   transactionHashVariant: TransactionHashVariant.LATEST_FINAL,
 });
 
+function compactRequirements(releaseId, requirements) {
+  return Buffer.concat(requirements.map(({ advisory_id, revision }) => createHash("sha256")
+    .update(`${releaseId}|${advisory_id}|${revision}`).digest()));
+}
+
 function sha256(value) {
   return createHash("sha256").update(value).digest("hex");
 }
@@ -321,11 +326,11 @@ async function main() {
   const policyBRequirements = [...policyARequirements, { advisory_id: ADVISORY_ID, revision: osvRevision }];
   const policyA = JSON.stringify(policyARequirements);
   const policyB = JSON.stringify(policyBRequirements);
-  const vulnerableGate = await read(client, address, "authorization_for_release", [vulnerable.id, policyA]);
-  const patchedGate = await read(client, address, "authorization_for_release", [patched.id, policyB]);
-  const preRevocationGateE = await read(client, address, "authorization_for_release", [releaseE.id, policyA]);
+  const vulnerableGate = await read(client, address, "authorization_for_release_compact", [vulnerable.id, compactRequirements(vulnerable.id, policyARequirements)]);
+  const patchedGate = await read(client, address, "authorization_for_release_compact", [patched.id, compactRequirements(patched.id, policyBRequirements)]);
+  const preRevocationGateE = await read(client, address, "authorization_for_release_compact", [releaseE.id, compactRequirements(releaseE.id, policyARequirements)]);
   await send("revoke-osv-supplemental-source", "revoke_source_host", ["api.osv.dev", "SUPPLEMENTAL"]);
-  const revokedGateE = await read(client, address, "authorization_for_release", [releaseE.id, policyA]);
+  const revokedGateE = await read(client, address, "authorization_for_release_compact", [releaseE.id, compactRequirements(releaseE.id, policyARequirements)]);
   const finalAssessmentD = await read(client, address, "get_assessment", [assessmentD.id]);
   const finalAssessmentE = await read(client, address, "get_assessment", [assessmentE.id]);
   const finalAssessmentF = await read(client, address, "get_assessment", [assessmentF.id]);

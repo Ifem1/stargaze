@@ -271,6 +271,73 @@ def test_revocation_after_approval_holds_current_authorization(direct_vm, direct
     assert contract.authorization_for_release(release_id, required)["status"] == "HOLD"
 
 
+def test_favorable_assessment_requires_new_epoch_attestation_after_reauthorization(direct_vm, direct_deploy, direct_owner):
+    body = advisory_json("fixed before 2.0.0")
+    direct_vm.mock_web(r"api\.github\.com/advisories/", {"status": 200, "body": body})
+    direct_vm.mock_llm(r"Authenticated advisory identity", "NOT_AFFECTED")
+    contract = setup_contract(direct_vm, direct_deploy, direct_owner)
+    release_id = add_release(contract, direct_owner)
+    revision = revision_for(body)
+    old_id = add_assessment(contract, release_id, revision)
+    assert contract.evaluate_assessment(old_id) == "NOT_AFFECTED"
+    required = json.dumps([{"advisory_id": ADVISORY_ID, "revision": revision}])
+    assert contract.authorization_for_release(release_id, required)["status"] == "AUTHORIZED_FOR_POLICY_SET"
+
+    contract.revoke_source_host("api.github.com", "PRIMARY")
+    assert contract.authorization_for_release(release_id, required)["status"] == "HOLD"
+    contract.authorize_source_host("api.github.com", "PRIMARY")
+    assert contract.authorization_for_release(release_id, required)["status"] == "HOLD"
+
+    new_id = add_assessment(contract, release_id, revision)
+    assert new_id != old_id
+    assert contract.get_assessment(new_id)["sources"][0]["source_epoch"] > contract.get_assessment(old_id)["sources"][0]["source_epoch"]
+    assert contract.evaluate_assessment(new_id) == "NOT_AFFECTED"
+    assert contract.authorization_for_release(release_id, required)["status"] == "AUTHORIZED_FOR_POLICY_SET"
+    history = contract.get_assessment_history_by_identity(release_id, ADVISORY_ID, revision, 0, 5)
+    assert [item["id"] for item in history] == [old_id, new_id]
+    assert contract.get_assessment(old_id)["verdict"] == "NOT_AFFECTED"
+
+
+@pytest.mark.parametrize("verdict", ["AFFECTED", "CONDITIONAL", "INSUFFICIENT_EVIDENCE"])
+def test_substantive_verdict_cannot_be_bypassed_by_trust_epoch_reattestation(direct_vm, direct_deploy, direct_owner, verdict):
+    body = advisory_json("advisory scope")
+    direct_vm.mock_web(r"api\.github\.com/advisories/", {"status": 200, "body": body})
+    direct_vm.mock_llm(r"Authenticated advisory identity", verdict)
+    contract = setup_contract(direct_vm, direct_deploy, direct_owner)
+    release_id = add_release(contract, direct_owner)
+    revision = revision_for(body)
+    assessment_id = add_assessment(contract, release_id, revision)
+    assert contract.evaluate_assessment(assessment_id) == verdict
+    contract.revoke_source_host("api.github.com", "PRIMARY")
+    contract.authorize_source_host("api.github.com", "PRIMARY")
+    with direct_vm.expect_revert("Substantive advisory outcomes cannot be reattested"):
+        add_assessment(contract, release_id, revision)
+    assert contract.get_assessment_counter() == 1
+
+
+def test_compact_atomic_authorization_accepts_five_and_holds_on_any_missing_identity(direct_vm, direct_deploy, direct_owner):
+    advisory_ids = ["GHSA-2222-3333-4444", "GHSA-3333-4444-5555", "GHSA-4444-5555-6666",
+                    "GHSA-5555-6666-7777", "GHSA-6666-7777-8888"]
+    bodies = [advisory_json("fixed before 1.0.0", advisory_id) for advisory_id in advisory_ids]
+    for advisory_id, body in zip(advisory_ids, bodies):
+        direct_vm.mock_web(r"api\.github\.com/advisories/" + advisory_id, {"status": 200, "body": body})
+    direct_vm.mock_llm(r"Authenticated advisory identity", "NOT_AFFECTED")
+    contract = setup_contract(direct_vm, direct_deploy, direct_owner)
+    release_id = add_release(contract, direct_owner)
+    requirements = []
+    for advisory_id, body in zip(advisory_ids, bodies):
+        revision = revision_for(body)
+        assessment_id = add_assessment(contract, release_id, revision, advisory_id)
+        assert contract.evaluate_assessment(assessment_id) == "NOT_AFFECTED"
+        requirements.append((advisory_id, revision))
+    packed = b"".join(hashlib.sha256(f"{release_id}|{advisory_id}|{revision}".encode()).digest()
+                      for advisory_id, revision in requirements)
+    result = contract.authorization_for_release_compact(release_id, packed)
+    assert result["status"] == "AUTHORIZED_FOR_POLICY_SET" and len(result["checks"]) == 5
+    assert contract.authorization_for_release_compact(release_id, packed[:128] + b"x" * 32)["status"] == "HOLD"
+    assert contract.authorization_for_release_compact(release_id, packed[:128] + packed[:32])["reason"] == "DUPLICATE_POLICY_ENTRY"
+
+
 def test_revocation_after_failed_attempt_blocks_retry(direct_vm, direct_deploy, direct_owner):
     body = advisory_json()
     direct_vm.mock_web(r"api\.github\.com/advisories/", {"status": 503, "body": "offline"})

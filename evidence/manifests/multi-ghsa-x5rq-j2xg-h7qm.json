@@ -1,0 +1,34 @@
+{
+  "domain": "STARGAZE_ADVISORY_ARCHIVE_V1",
+  "provider": "github",
+  "advisory_id": "GHSA-x5rq-j2xg-h7qm",
+  "ecosystem": "npm",
+  "package_name": "lodash",
+  "revision": "ghsa-sha256:e7ff9dc77fff9e03ae976b9b6b51a1b48cb97d7de150270c3b61ab05d7298c94",
+  "primary_url": "https://api.github.com/advisories/GHSA-x5rq-j2xg-h7qm",
+  "sources": [
+    {
+      "url": "https://api.github.com/advisories/GHSA-x5rq-j2xg-h7qm",
+      "role": "PRIMARY",
+      "response_status": 200,
+      "body_sha256": "e7ff9dc77fff9e03ae976b9b6b51a1b48cb97d7de150270c3b61ab05d7298c94",
+      "body_bytes": 5567,
+      "archive_path": "evidence/snapshots/sha256/e7ff9dc77fff9e03ae976b9b6b51a1b48cb97d7de150270c3b61ab05d7298c94.bin",
+      "metadata_identity_valid": true,
+      "revision_metadata": {
+        "published_at": "2019-07-19T16:13:07Z",
+        "updated_at": "2025-09-29T20:19:29Z"
+      }
+    },
+    {
+      "url": "https://registry.npmjs.org/lodash/4.18.0",
+      "role": "SUPPLEMENTAL",
+      "response_status": 200,
+      "body_sha256": "bac24a6f249f705067942c12687bd2f0aedb9ba74376d744419bad60fa5b19b4",
+      "body_bytes": 1732,
+      "archive_path": "evidence/snapshots/sha256/bac24a6f249f705067942c12687bd2f0aedb9ba74376d744419bad60fa5b19b4.bin",
+      "metadata_identity_valid": true,
+      "revision_metadata": {}
+    }
+  ]
+}

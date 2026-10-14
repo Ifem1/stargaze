@@ -11,11 +11,6 @@ export const CHAIN_ID = 61999;
 export const RPC_URL = 'https://studio.genlayer.com/api';
 export const EXPLORER_URL = 'https://explorer-studio.genlayer.com';
 
-type Assessment = {
-  id: string; release_id: string; advisory_id: string; revision: string;
-  state: string; verdict: string; eligible: boolean; packet_digest: string;
-  revision_authenticated: boolean; evidence_complete: boolean;
-};
 type Release = { id: string; artifact_digest: string; status: string };
 type GateCheck = { advisory_id: string; revision: string; assessment_id: string; verdict: string;
   packet_digest: string; revision_authenticated: boolean; evidence_complete: boolean; trust_epoch_valid: boolean };
@@ -26,8 +21,7 @@ export type Policy = {
 };
 export type FinalReader = {
   getRelease(id: string): Promise<unknown>;
-  getAssessmentByIdentity(releaseId: string, advisoryId: string, revision: string): Promise<unknown>;
-  authorizationForRelease(releaseId: string, requiredPolicyJson: string): Promise<unknown>;
+  authorizationForRelease(releaseId: string, requirementCommitments: Uint8Array): Promise<unknown>;
 };
 
 function fail(message: string): never { throw new Error(message); }
@@ -40,7 +34,7 @@ export function validatePolicy(value: unknown): Policy {
   if (typeof value.contract_address !== 'string' || !/^0x[a-fA-F0-9]{40}$/.test(value.contract_address)) fail('DENY: invalid contract address.');
   if (typeof value.release_id !== 'string' || value.release_id.length < 5) fail('DENY: invalid release ID.');
   if (!isDigest(value.artifact_digest)) fail('DENY: invalid artifact SHA-256.');
-  if (!Array.isArray(value.required) || value.required.length < 1 || value.required.length > 50) fail('DENY: explicit non-empty advisory revision policy is required.');
+  if (!Array.isArray(value.required) || value.required.length < 1 || value.required.length > 5) fail('DENY: between one and five advisory revision requirements are supported.');
   const seen = new Set<string>();
   for (const pair of value.required) {
     if (!isRecord(pair) || typeof pair.advisory_id !== 'string' || !pair.advisory_id || typeof pair.revision !== 'string' || !pair.revision) fail('DENY: malformed advisory revision requirement.');
@@ -58,7 +52,9 @@ export async function evaluateFinalPolicy(policyInput: unknown, reader: FinalRea
   const release = releaseRaw as unknown as Release;
   if (release.id !== policy.release_id || release.status !== 'SEALED' || release.artifact_digest !== policy.artifact_digest) fail('DENY: release identity or artifact digest mismatch.');
 
-  const gateRaw = await reader.authorizationForRelease(policy.release_id, JSON.stringify(policy.required));
+  const commitments = Buffer.concat(policy.required.map((item) => createHash('sha256')
+    .update(`${policy.release_id}|${item.advisory_id}|${item.revision}`).digest()));
+  const gateRaw = await reader.authorizationForRelease(policy.release_id, commitments);
   if (!isRecord(gateRaw)) fail('DENY: authoritative contract gate read failed or malformed.');
   const gate = gateRaw as unknown as ContractGate;
   if (gate.status !== 'AUTHORIZED_FOR_POLICY_SET' || gate.release_id !== policy.release_id
@@ -71,23 +67,13 @@ export async function evaluateFinalPolicy(policyInput: unknown, reader: FinalRea
     const required = policy.required[index];
     const checkRaw: unknown = gate.checks[index];
     if (!isRecord(checkRaw) || checkRaw.advisory_id !== required.advisory_id || checkRaw.revision !== required.revision
-        || typeof checkRaw.assessment_id !== 'string' || checkRaw.verdict !== 'NOT_AFFECTED'
+        || typeof checkRaw.assessment_id !== 'string' || !checkRaw.assessment_id || checkRaw.verdict !== 'NOT_AFFECTED'
         || !isDigest(checkRaw.packet_digest) || checkRaw.revision_authenticated !== true
         || checkRaw.evidence_complete !== true || checkRaw.trust_epoch_valid !== true) {
       fail(`DENY: malformed indexed authorization check for ${required.advisory_id}@${required.revision}.`);
     }
-    const assessmentRaw = await reader.getAssessmentByIdentity(policy.release_id, required.advisory_id, required.revision);
-    if (!isRecord(assessmentRaw)) fail('DENY: indexed assessment read failed or malformed.');
-    const found = assessmentRaw as unknown as Assessment;
-    if (found.id !== checkRaw.assessment_id || found.release_id !== policy.release_id
-        || found.advisory_id !== required.advisory_id || found.revision !== required.revision
-        || found.state !== 'DECIDED' || found.verdict !== 'NOT_AFFECTED' || found.eligible !== true
-        || found.revision_authenticated !== true || found.evidence_complete !== true
-        || !isDigest(found.packet_digest) || found.packet_digest !== checkRaw.packet_digest) {
-      fail(`DENY: required revision ${required.advisory_id}@${required.revision} is not finally cleared.`);
-    }
     verified.push({ advisory_id: required.advisory_id, revision: required.revision,
-      assessment_id: found.id, packet_digest: found.packet_digest });
+      assessment_id: checkRaw.assessment_id, packet_digest: checkRaw.packet_digest });
   }
   const policyDigest = createHash('sha256').update(JSON.stringify({ domain: 'STARGAZE_GATE_POLICY_V1', chain_id: CHAIN_ID,
     contract_address: policy.contract_address.toLowerCase(), release_id: policy.release_id,
@@ -127,8 +113,7 @@ async function main() {
   const client = createClient({ chain: studionet });
   const reader: FinalReader = {
     getRelease: (id) => client.readContract({ address: policy.contract_address as `0x${string}`, functionName: 'get_release', args: [id], transactionHashVariant: TransactionHashVariant.LATEST_FINAL }),
-    getAssessmentByIdentity: (releaseId, advisoryId, revision) => client.readContract({ address: policy.contract_address as `0x${string}`, functionName: 'get_assessment_by_identity', args: [releaseId, advisoryId, revision], transactionHashVariant: TransactionHashVariant.LATEST_FINAL }),
-    authorizationForRelease: (releaseId, requiredJson) => client.readContract({ address: policy.contract_address as `0x${string}`, functionName: 'authorization_for_release', args: [releaseId, requiredJson], transactionHashVariant: TransactionHashVariant.LATEST_FINAL }),
+    authorizationForRelease: (releaseId, requirementCommitments) => client.readContract({ address: policy.contract_address as `0x${string}`, functionName: 'authorization_for_release_compact', args: [releaseId, requirementCommitments], transactionHashVariant: TransactionHashVariant.LATEST_FINAL }),
   };
   const command = process.argv[separator + 1];
   const args = process.argv.slice(separator + 2);

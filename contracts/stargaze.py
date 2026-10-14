@@ -19,6 +19,10 @@ class Stargaze(gl.Contract):
     release_assessments: TreeMap[str, str]
     assessment_keys: TreeMap[str, str]
     assessment_attempts: TreeMap[str, str]
+    assessment_identity_commitments: TreeMap[str, str]
+    assessment_identity_epoch_keys: TreeMap[str, str]
+    assessment_identity_versions: TreeMap[str, u256]
+    assessment_identity_history: TreeMap[str, str]
     authorized_hosts: TreeMap[str, str]
     revoked_hosts: TreeMap[str, bool]
     source_epochs: TreeMap[str, u256]
@@ -27,6 +31,7 @@ class Stargaze(gl.Contract):
     MAX_SOURCES = 4
     MAX_BODY_BYTES = 12000
     MAX_ATTEMPTS = 3
+    MAX_POLICY_REQUIREMENTS = 5
     VERDICTS = ("AFFECTED", "NOT_AFFECTED", "CONDITIONAL", "INSUFFICIENT_EVIDENCE")
 
     def __init__(self):
@@ -75,6 +80,13 @@ class Stargaze(gl.Contract):
 
     def _source_key(self, host: str, role: str) -> str:
         return host + "|" + role
+
+    def _assessment_identity_key(self, release_id: str, advisory_id: str, revision: str) -> str:
+        return release_id + "|" + advisory_id + "|" + revision
+
+    def _assessment_identity_commitment(self, release_id: str, advisory_id: str, revision: str) -> str:
+        identity = self._assessment_identity_key(release_id, advisory_id, revision)
+        return hashlib.sha256(identity.encode("utf-8")).hexdigest()
 
     def _validate_canonical_source(self, url: str, role: str, advisory_id: str,
                                    ecosystem: str, package_name: str, release: dict) -> str:
@@ -278,9 +290,30 @@ class Stargaze(gl.Contract):
                                "source_epoch": int(self.source_epochs.get(source_key, u256(1)))})
         if primary_count != 1:
             self._fail("Exactly one canonical primary source is required")
-        key = release_id + "|" + advisory_id + "|" + revision
-        if key in self.assessment_keys:
-            self._fail("Assessment identity already exists")
+        key = self._assessment_identity_key(release_id, advisory_id, revision)
+        prior_id = self.assessment_keys.get(key, "")
+        if prior_id:
+            previous = json.loads(self.assessments[prior_id])
+            if previous["state"] == "DECIDED" and previous["verdict"] != "NOT_AFFECTED":
+                self._fail("Substantive advisory outcomes cannot be reattested")
+            if previous["state"] not in ("OPEN", "RETRYABLE_FAILURE", "SUSPENDED", "DECIDED"):
+                self._fail("Assessment identity is not eligible for trust-epoch reattestation")
+            if len(previous["sources"]) != len(normalized):
+                self._fail("Trust-epoch reattestation must preserve the frozen source set")
+            epoch_changed = False
+            for old_source, new_source in zip(previous["sources"], normalized):
+                if old_source["url"] != new_source["url"] or old_source["role"] != new_source["role"] or old_source["kind"] != new_source["kind"]:
+                    self._fail("Trust-epoch reattestation must preserve the frozen source set")
+                if old_source["source_epoch"] != new_source["source_epoch"]:
+                    epoch_changed = True
+            if not epoch_changed:
+                self._fail("Assessment identity already exists at the current trust epoch")
+        commitment = self._assessment_identity_commitment(release_id, advisory_id, revision)
+        epoch_key = hashlib.sha256((commitment + "|" + json.dumps(
+            [[source["host"], source["role"], source["source_epoch"]] for source in normalized],
+            separators=(",", ":"))).encode("utf-8")).hexdigest()
+        if epoch_key in self.assessment_identity_epoch_keys:
+            self._fail("Assessment already exists for this trust epoch")
         assessment_id = "asm-" + str(self.assessment_count + 1)
         record = {"id": assessment_id, "release_id": release_id, "advisory_id": advisory_id,
                   "revision": revision, "title": title, "ecosystem": ecosystem,
@@ -289,9 +322,15 @@ class Stargaze(gl.Contract):
                   "authorization": "HOLD", "packet_digest": "", "eligible": False,
                   "revision_authenticated": False, "revision_metadata": {}, "evidence_complete": False,
                   "evidence_manifest": [], "attempt_count": 0, "trust_epoch_valid": True,
-                  "sequence": self.assessment_count + 1}
+                  "sequence": self.assessment_count + 1, "identity_commitment": commitment,
+                  "identity_version": int(self.assessment_identity_versions.get(key, u256(0)) + u256(1))}
         self.assessments[assessment_id] = json.dumps(record, sort_keys=True)
         self.assessment_keys[key] = assessment_id
+        self.assessment_identity_commitments[commitment] = assessment_id
+        self.assessment_identity_epoch_keys[epoch_key] = assessment_id
+        identity_version = self.assessment_identity_versions.get(key, u256(0)) + u256(1)
+        self.assessment_identity_versions[key] = u256(identity_version)
+        self.assessment_identity_history[key + "|" + str(identity_version)] = assessment_id
         release_assessment_count = self.release_assessment_counts.get(release_id, u256(0))
         self.release_assessments[release_id + "|" + str(release_assessment_count + 1)] = assessment_id
         self.release_assessment_counts[release_id] = u256(release_assessment_count + 1)
@@ -509,11 +548,28 @@ class Stargaze(gl.Contract):
 
     @gl.public.view
     def get_assessment_by_identity(self, release_id: str, advisory_id: str, revision: str) -> dict:
-        key = release_id + "|" + advisory_id + "|" + revision
+        key = self._assessment_identity_key(release_id, advisory_id, revision)
         assessment_id = self.assessment_keys.get(key, "")
         if not assessment_id or assessment_id not in self.assessments:
             return {}
         return json.loads(self.assessments[assessment_id])
+
+    @gl.public.view
+    def get_assessment_history_by_identity(self, release_id: str, advisory_id: str,
+                                           revision: str, offset: int = 0, limit: int = 5) -> list:
+        key = self._assessment_identity_key(release_id, advisory_id, revision)
+        count = int(self.assessment_identity_versions.get(key, u256(0)))
+        if offset < 0 or limit < 1 or limit > 5:
+            self._fail("Invalid identity-history pagination bounds")
+        rows = []
+        start = offset + 1
+        end = min(count + 1, start + limit)
+        while start < end:
+            assessment_id = self.assessment_identity_history.get(key + "|" + str(start), "")
+            if assessment_id and assessment_id in self.assessments:
+                rows.append(json.loads(self.assessments[assessment_id]))
+            start += 1
+        return rows
 
     @gl.public.view
     def get_assessment_attempt(self, assessment_id: str, attempt_sequence: int) -> dict:
@@ -612,6 +668,43 @@ class Stargaze(gl.Contract):
         chain.reverse()
         return chain
 
+    def _authorization_for_requirements(self, release_id: str, release: dict, required: list) -> dict:
+        results = []
+        seen = {}
+        for requirement in required:
+            if not isinstance(requirement, dict) or set(requirement.keys()) != {"advisory_id", "revision"}:
+                return {"status": "HOLD", "release_id": release_id,
+                        "artifact_digest": release["artifact_digest"], "reason": "INVALID_POLICY", "checks": []}
+            advisory_id = requirement["advisory_id"]
+            revision = requirement["revision"]
+            if not isinstance(advisory_id, str) or not advisory_id or not isinstance(revision, str) or not revision:
+                return {"status": "HOLD", "release_id": release_id,
+                        "artifact_digest": release["artifact_digest"], "reason": "INVALID_POLICY", "checks": []}
+            identity = self._assessment_identity_key(release_id, advisory_id, revision)
+            if identity in seen:
+                return {"status": "HOLD", "release_id": release_id,
+                        "artifact_digest": release["artifact_digest"], "reason": "DUPLICATE_POLICY_ENTRY", "checks": []}
+            seen[identity] = True
+            assessment_id = self.assessment_keys.get(identity, "")
+            item = json.loads(self.assessments[assessment_id]) if assessment_id and assessment_id in self.assessments else None
+            trust_valid = item is not None and item["trust_epoch_valid"]
+            if item is not None:
+                for source in item["sources"]:
+                    source_key = self._source_key(source["host"], source["role"])
+                    if self.revoked_hosts.get(source_key, True) or self.authorized_hosts.get(source_key) != source["role"] or int(self.source_epochs.get(source_key, u256(1))) != source["source_epoch"]:
+                        trust_valid = False
+            if item is None or item["release_id"] != release_id or item["advisory_id"] != advisory_id or item["revision"] != revision or item["state"] != "DECIDED" or item["verdict"] != "NOT_AFFECTED" or not item["eligible"] or not item["revision_authenticated"] or not item["evidence_complete"] or not self._is_hex(item["packet_digest"], 64) or not trust_valid:
+                return {"status": "HOLD", "release_id": release_id, "artifact_digest": release["artifact_digest"],
+                        "reason": "REQUIRED_REVISION_NOT_CLEARED", "checks": []}
+            results.append({"advisory_id": item["advisory_id"], "revision": item["revision"],
+                            "assessment_id": item["id"], "verdict": item["verdict"],
+                            "packet_digest": item["packet_digest"],
+                            "revision_authenticated": item["revision_authenticated"],
+                            "evidence_complete": item["evidence_complete"],
+                            "trust_epoch_valid": trust_valid})
+        return {"status": "AUTHORIZED_FOR_POLICY_SET", "release_id": release_id,
+                "artifact_digest": release["artifact_digest"], "checks": results}
+
     @gl.public.view
     def authorization_for_release(self, release_id: str, required_policy_json: str) -> dict:
         if release_id not in self.releases:
@@ -623,30 +716,36 @@ class Stargaze(gl.Contract):
             return {"status": "HOLD", "reason": "INVALID_POLICY"}
         if not isinstance(required, list) or len(required) == 0 or len(required) > 50:
             return {"status": "HOLD", "reason": "EMPTY_OR_INVALID_POLICY"}
+        return self._authorization_for_requirements(release_id, release, required)
+
+    @gl.public.view
+    def authorization_for_release_compact(self, release_id: str, requirement_commitments: bytes) -> dict:
+        """Atomically authorize 1–5 identities encoded as packed SHA-256 commitments."""
+        if release_id not in self.releases:
+            return {"status": "HOLD", "reason": "UNKNOWN_RELEASE"}
+        release = json.loads(self.releases[release_id])
+        if not isinstance(requirement_commitments, bytes) or len(requirement_commitments) == 0 or len(requirement_commitments) % 32 != 0:
+            return {"status": "HOLD", "release_id": release_id,
+                    "artifact_digest": release["artifact_digest"], "reason": "INVALID_COMPACT_POLICY", "checks": []}
+        count = len(requirement_commitments) // 32
+        if count < 1 or count > self.MAX_POLICY_REQUIREMENTS:
+            return {"status": "HOLD", "release_id": release_id,
+                    "artifact_digest": release["artifact_digest"], "reason": "POLICY_SIZE_UNSUPPORTED", "checks": []}
         seen = {}
-        for item in required:
-            if not isinstance(item, dict) or set(item.keys()) != {"advisory_id", "revision"}:
-                return {"status": "HOLD", "reason": "INVALID_POLICY"}
-            if not isinstance(item["advisory_id"], str) or not item["advisory_id"] or not isinstance(item["revision"], str) or not item["revision"]:
-                return {"status": "HOLD", "reason": "INVALID_POLICY"}
-            identity = item["advisory_id"] + "|" + item["revision"]
-            if identity in seen:
-                return {"status": "HOLD", "reason": "DUPLICATE_POLICY_ENTRY"}
-            seen[identity] = True
-        results = []
-        for requirement in required:
-            identity_key = release_id + "|" + requirement["advisory_id"] + "|" + requirement["revision"]
-            assessment_id = self.assessment_keys.get(identity_key, "")
-            item = json.loads(self.assessments[assessment_id]) if assessment_id and assessment_id in self.assessments else None
-            trust_valid = item is not None and item["trust_epoch_valid"]
-            if item is not None:
-                for source in item["sources"]:
-                    source_key = self._source_key(source["host"], source["role"])
-                    if self.revoked_hosts.get(source_key, True) or self.authorized_hosts.get(source_key) != source["role"] or int(self.source_epochs.get(source_key, u256(1))) != source["source_epoch"]:
-                        trust_valid = False
-            if item is None or item["release_id"] != release_id or item["advisory_id"] != requirement["advisory_id"] or item["revision"] != requirement["revision"] or item["state"] != "DECIDED" or item["verdict"] != "NOT_AFFECTED" or not item["eligible"] or not item["revision_authenticated"] or not item["evidence_complete"] or not self._is_hex(item["packet_digest"], 64) or not trust_valid:
-                return {"status": "HOLD", "release_id": release_id, "artifact_digest": release["artifact_digest"],
-                        "reason": "REQUIRED_REVISION_NOT_CLEARED", "checks": results}
-            results.append({"advisory_id": item["advisory_id"], "revision": item["revision"], "assessment_id": item["id"], "verdict": item["verdict"], "packet_digest": item["packet_digest"], "revision_authenticated": item["revision_authenticated"], "evidence_complete": item["evidence_complete"], "trust_epoch_valid": trust_valid})
-        return {"status": "AUTHORIZED_FOR_POLICY_SET", "release_id": release_id,
-                "artifact_digest": release["artifact_digest"], "checks": results}
+        requirements = []
+        for index in range(count):
+            commitment = requirement_commitments[index * 32:(index + 1) * 32].hex()
+            if commitment in seen:
+                return {"status": "HOLD", "release_id": release_id,
+                        "artifact_digest": release["artifact_digest"], "reason": "DUPLICATE_POLICY_ENTRY", "checks": []}
+            seen[commitment] = True
+            assessment_id = self.assessment_identity_commitments.get(commitment, "")
+            if not assessment_id or assessment_id not in self.assessments:
+                return {"status": "HOLD", "release_id": release_id,
+                        "artifact_digest": release["artifact_digest"], "reason": "REQUIRED_REVISION_NOT_CLEARED", "checks": []}
+            item = json.loads(self.assessments[assessment_id])
+            if item["release_id"] != release_id or item.get("identity_commitment") != commitment:
+                return {"status": "HOLD", "release_id": release_id,
+                        "artifact_digest": release["artifact_digest"], "reason": "REQUIRED_REVISION_NOT_CLEARED", "checks": []}
+            requirements.append({"advisory_id": item["advisory_id"], "revision": item["revision"]})
+        return self._authorization_for_requirements(release_id, release, requirements)
