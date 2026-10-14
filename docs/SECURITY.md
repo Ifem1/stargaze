@@ -1,19 +1,23 @@
 # Security model and review boundaries
 
-## Scope
+## Authorization scope
 
-An authorization is limited to an exact immutable declared release and a caller-supplied set of exact `(advisory_id, revision)` pairs. `NOT_AFFECTED` is not a universal software safety claim and does not attest that a declared artifact digest corresponds to a particular binary deployed by a third party.
+Authorization applies only to one immutable declared release and one explicit, nonempty set of authenticated advisory revisions. `NOT_AFFECTED` is a semantic applicability result for those bytes and that release. It is not a universal safety claim, publisher identity proof, or binary provenance attestation.
 
-## Controls
+## Advisory revision identity
 
-- Sealed release fields cannot be edited; fixes are new linked successors.
-- Duplicate release/assessment identity is rejected. Historical assessments remain addressable.
-- Only exact configured lower-case HTTPS hostnames and frozen URLs are admissible; credentials, fragments, substring matching, HTTP and ambiguous authority are rejected.
-- Every leader and validator independently fetches every frozen source. Non-200, missing, empty, oversized, invalid UTF-8 or partial evidence yields `INSUFFICIENT_EVIDENCE`.
-- The LLM is told to treat evidence as untrusted data and may return only four exact verdict strings. Deterministic code binds the label to a domain-separated packet digest and completeness bit. Validators compare all three.
-- Promotion requires a non-empty explicit advisory revision set and final accepted state. Missing evidence, disagreement, non-final state, stale artifact, mismatch or RPC failure denies.
-- Protected processes are invoked with an argv vector and no shell. The command is not run until checks pass.
+Caller-provided timestamps or labels are not accepted as revisions. A registration intent must carry `ghsa-sha256:<digest>` or `osv-sha256:<digest>`. Independent validators retrieve the exact canonical endpoint, validate identifier/package/provider metadata, hash the exact bounded response bytes, and compare the provider-prefixed digest. GitHub `published_at` and `updated_at` or OSV `published`/`modified` values are retained from the validated source body. A body change with an unchanged identifier or timestamp fails the earlier commitment. The old assessment remains historical and is not an assertion about the latest advisory revision.
 
-## Residual trust assumptions
+## Attempts and finality
 
-Host allow-list administration and the declared source policy are trust inputs. HTTPS content may be wrong, compromised or revised; snapshots commit what validators observed and do not prove software provenance. Model judgments may be incorrect. Consensus attests agreement under the protocol, not truth. Live deployment and actual advisory applicability must be independently verified and documented.
+An assessment allows at most three attempts. Only an `OPEN` request or an objectively `RETRYABLE_FAILURE` can proceed. HTTP/network unavailability, incomplete bytes and malformed model output are retryable; a mismatched source identity/revision is terminal `INVALID_REVISION`; source revocation is terminal `SUSPENDED`; a valid semantic verdict, including `AFFECTED`, `CONDITIONAL`, or `INSUFFICIENT_EVIDENCE`, is immutable `DECIDED`. No attempt record is committed unless the contract write finalizes. Authorization accepts only a complete, revision-authenticated `DECIDED/NOT_AFFECTED` record.
+
+## Source authority, revocation and residual trust
+
+The contract owner controls exact lower-case host/role permissions. URL paths are separately constrained to canonical provider endpoints. Revocation is role-scoped, increments that source trust epoch, suspends pending requests using it, and blocks current authorization for prior decisions using the epoch. Reauthorization cannot revive them; the owner must register a fresh request with a new content-addressed revision. Attempts and decisions are never edited or erased.
+
+TLS/API infrastructure, provider data, and configured host policy remain trust inputs. A compromised source can publish false information. Independent validators may agree on an incorrect semantic interpretation. The protocol commits to observed bounded response bytes and consensus, not truth. Archived source bytes support later replay but do not establish publisher control or build provenance. Release digests remain registrant declarations.
+
+## Downstream gate
+
+The TypeScript gate binds policy to chain `61999`, the configured exact contract, sealed release ID and artifact digest. It checks the authoritative on-chain policy result and independently reads each indexed assessment using `LATEST_FINAL`. Any malformed response, revocation, missing pair, non-final state, mismatch, RPC failure or incomplete evidence denies. The protected command is invoked with an argument vector and `shell:false` only after every check passes.

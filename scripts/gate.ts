@@ -14,15 +14,20 @@ export const EXPLORER_URL = 'https://explorer-studio.genlayer.com';
 type Assessment = {
   id: string; release_id: string; advisory_id: string; revision: string;
   state: string; verdict: string; eligible: boolean; packet_digest: string;
+  revision_authenticated: boolean; evidence_complete: boolean;
 };
 type Release = { id: string; artifact_digest: string; status: string };
+type GateCheck = { advisory_id: string; revision: string; assessment_id: string; verdict: string;
+  packet_digest: string; revision_authenticated: boolean; evidence_complete: boolean; trust_epoch_valid: boolean };
+type ContractGate = { status: string; release_id: string; artifact_digest: string; checks: GateCheck[] };
 export type Policy = {
   chain_id: number; contract_address: string; release_id: string;
   artifact_digest: string; required: Array<{ advisory_id: string; revision: string }>;
 };
 export type FinalReader = {
   getRelease(id: string): Promise<unknown>;
-  getAssessment(id: string): Promise<unknown>;
+  getAssessmentByIdentity(releaseId: string, advisoryId: string, revision: string): Promise<unknown>;
+  authorizationForRelease(releaseId: string, requiredPolicyJson: string): Promise<unknown>;
 };
 
 function fail(message: string): never { throw new Error(message); }
@@ -53,19 +58,36 @@ export async function evaluateFinalPolicy(policyInput: unknown, reader: FinalRea
   const release = releaseRaw as unknown as Release;
   if (release.id !== policy.release_id || release.status !== 'SEALED' || release.artifact_digest !== policy.artifact_digest) fail('DENY: release identity or artifact digest mismatch.');
 
+  const gateRaw = await reader.authorizationForRelease(policy.release_id, JSON.stringify(policy.required));
+  if (!isRecord(gateRaw)) fail('DENY: authoritative contract gate read failed or malformed.');
+  const gate = gateRaw as unknown as ContractGate;
+  if (gate.status !== 'AUTHORIZED_FOR_POLICY_SET' || gate.release_id !== policy.release_id
+      || gate.artifact_digest !== policy.artifact_digest || !Array.isArray(gate.checks)
+      || gate.checks.length !== policy.required.length) {
+    fail('DENY: authoritative contract gate did not authorize the exact policy set.');
+  }
   const verified = [];
-  for (const required of policy.required) {
-    let found: Assessment | undefined;
-    for (let offset = 0; offset < 10000; offset += 50) {
-      const pageRaw = await (reader as FinalReader & { listAssessments?: (offset: number, limit: number) => Promise<unknown> }).listAssessments?.(offset, 50);
-      if (!Array.isArray(pageRaw)) fail('DENY: final assessment registry read failed or malformed.');
-      for (const raw of pageRaw) {
-        if (isRecord(raw) && raw.release_id === policy.release_id && raw.advisory_id === required.advisory_id && raw.revision === required.revision) found = raw as unknown as Assessment;
-      }
-      if (pageRaw.length < 50) break;
+  for (let index = 0; index < policy.required.length; index += 1) {
+    const required = policy.required[index];
+    const checkRaw: unknown = gate.checks[index];
+    if (!isRecord(checkRaw) || checkRaw.advisory_id !== required.advisory_id || checkRaw.revision !== required.revision
+        || typeof checkRaw.assessment_id !== 'string' || checkRaw.verdict !== 'NOT_AFFECTED'
+        || !isDigest(checkRaw.packet_digest) || checkRaw.revision_authenticated !== true
+        || checkRaw.evidence_complete !== true || checkRaw.trust_epoch_valid !== true) {
+      fail(`DENY: malformed indexed authorization check for ${required.advisory_id}@${required.revision}.`);
     }
-    if (!found || found.state !== 'DECIDED' || found.verdict !== 'NOT_AFFECTED' || found.eligible !== true || !isDigest(found.packet_digest)) fail(`DENY: required revision ${required.advisory_id}@${required.revision} is not finally cleared.`);
-    verified.push({ advisory_id: required.advisory_id, revision: required.revision, assessment_id: found.id, packet_digest: found.packet_digest });
+    const assessmentRaw = await reader.getAssessmentByIdentity(policy.release_id, required.advisory_id, required.revision);
+    if (!isRecord(assessmentRaw)) fail('DENY: indexed assessment read failed or malformed.');
+    const found = assessmentRaw as unknown as Assessment;
+    if (found.id !== checkRaw.assessment_id || found.release_id !== policy.release_id
+        || found.advisory_id !== required.advisory_id || found.revision !== required.revision
+        || found.state !== 'DECIDED' || found.verdict !== 'NOT_AFFECTED' || found.eligible !== true
+        || found.revision_authenticated !== true || found.evidence_complete !== true
+        || !isDigest(found.packet_digest) || found.packet_digest !== checkRaw.packet_digest) {
+      fail(`DENY: required revision ${required.advisory_id}@${required.revision} is not finally cleared.`);
+    }
+    verified.push({ advisory_id: required.advisory_id, revision: required.revision,
+      assessment_id: found.id, packet_digest: found.packet_digest });
   }
   const policyDigest = createHash('sha256').update(JSON.stringify({ domain: 'STARGAZE_GATE_POLICY_V1', chain_id: CHAIN_ID,
     contract_address: policy.contract_address.toLowerCase(), release_id: policy.release_id,
@@ -103,10 +125,10 @@ async function main() {
   if (studionet.id !== CHAIN_ID) fail('DENY: installed GenLayerJS Studionet definition is not chain 61999.');
   await checkRpcChainId();
   const client = createClient({ chain: studionet });
-  const reader: FinalReader & { listAssessments: (offset: number, limit: number) => Promise<unknown> } = {
+  const reader: FinalReader = {
     getRelease: (id) => client.readContract({ address: policy.contract_address as `0x${string}`, functionName: 'get_release', args: [id], transactionHashVariant: TransactionHashVariant.LATEST_FINAL }),
-    getAssessment: (id) => client.readContract({ address: policy.contract_address as `0x${string}`, functionName: 'get_assessment', args: [id], transactionHashVariant: TransactionHashVariant.LATEST_FINAL }),
-    listAssessments: (offset, limit) => client.readContract({ address: policy.contract_address as `0x${string}`, functionName: 'list_assessments', args: [offset, limit], transactionHashVariant: TransactionHashVariant.LATEST_FINAL }),
+    getAssessmentByIdentity: (releaseId, advisoryId, revision) => client.readContract({ address: policy.contract_address as `0x${string}`, functionName: 'get_assessment_by_identity', args: [releaseId, advisoryId, revision], transactionHashVariant: TransactionHashVariant.LATEST_FINAL }),
+    authorizationForRelease: (releaseId, requiredJson) => client.readContract({ address: policy.contract_address as `0x${string}`, functionName: 'authorization_for_release', args: [releaseId, requiredJson], transactionHashVariant: TransactionHashVariant.LATEST_FINAL }),
   };
   const command = process.argv[separator + 1];
   const args = process.argv.slice(separator + 2);

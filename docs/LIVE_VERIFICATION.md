@@ -1,6 +1,48 @@
 # Live verification record
 
-> **Audit follow-up (2026-10-13):** The deployment and scenarios recorded in the original sections below are historical pre-hardening evidence and are superseded. The canonical contract and live A/B evidence in [Hardened audit deployment](#hardened-audit-deployment) are authoritative for this release.
+> **Steward closeout update (2026-10-14):** The current hardened source is deployed at `0xb47A5B73D31007e38264A89998a7eBfD7Be46144`. Real A/B GHSA evaluations and downstream gate checks were run against this address. An OSV assessment failed closed on an observed primary-revision mismatch; the multi-revision gate query encountered an RPC RLP error. See [current candidate status](#current-hardened-candidate-2026-10-14).
+
+## Current hardened candidate (2026-10-14)
+
+- Network: stable Studionet, chain `61999` (`0xF22F`), RPC `https://studio.genlayer.com/api`.
+- Address: [`0xb47A5B73D31007e38264A89998a7eBfD7Be46144`](https://explorer-studio.genlayer.com/address/0xb47A5B73D31007e38264A89998a7eBfD7Be46144).
+- Deployment transaction: [`0xd43414bc64d4be0d3676f0781d3589bf33a8159c5c8ed1e8e131d0c68da0bc23`](https://explorer-studio.genlayer.com/tx/0xd43414bc64d4be0d3676f0781d3589bf33a8159c5c8ed1e8e131d0c68da0bc23), receipt `ACCEPTED`, `MAJORITY_AGREE`, leader execution `SUCCESS`, five of five validator votes agreed.
+- Exact deployed source `contracts/stargaze.py` SHA-256: `d809a55066574ea367b8dd4c630261fd479ae53244694798602deb9d0dfb0fe6`.
+- The deployment was made using repository-local GenLayer CLI `0.39.1`, stable RPC and designated throwaway account `0xd6423ae82a975d55c6ceac222827a727325e0459`.
+- Final `LATEST_FINAL` counters are `releaseCount=2`, `assessmentCount=3`. Assessments `asm-1` and `asm-2` completed the GHSA scenarios; `asm-3` recorded an OSV primary revision mismatch and is `INVALID_REVISION`.
+- `frontend/.env.local` and Vercel Production/Preview `NEXT_PUBLIC_STARGAZE_CONTRACT_ADDRESS` point at this address. Production deployment `dpl_2XBy6bMLS62R6z6CeVAUasJUqLYy` is `READY` and aliased to https://stargaze-taupe.vercel.app. The page returned HTTP 200; its served bundle contains the address. `scripts/verify_production.mjs` read chain 61999 and counters `2` and `3`; see `evidence/live/production-readback.json` (checked `2026-10-14T09:41:40Z`).
+- Final Preview deployment `dpl_9rUSfQX6v4Wg4yjomXtegyfjdfGm` is `READY` at `https://stargaze-pcpkz3jyk-ifem1s-projects.vercel.app`. The Preview environment pull confirms the correct address. Preview deployment protection returns a Vercel login page to anonymous fetch; authenticated CLI page fetch returns the Stargaze app, but its bundle scan was stopped after the serial protected-asset fetch exceeded the command window. No Preview bundle parity claim is made.
+- Superseded empty deployment from a signer mismatch: `0x1B4a2b6f0d1B386C6e1b4F2B282F616da6906F41`, transaction `0x5e78a089273f841310e786fc8e1077de810461293ad34595fdedb4bd17ceb70d`; no protocol writes were submitted there. It is not canonical.
+- The A/B and OSV writes were submitted from the previously authorized funded throwaway account. No private key or wallet password is included in this repository. GitHub CLI credentials were invalid at last check; push status is pending.
+
+Sections below the “Hardened audit deployment” heading preserve historical results. The current-candidate evidence follows.
+
+### Current-candidate live cycle
+
+The canonical deployed source hash is `d809a55066574ea367b8dd4c630261fd479ae53244694798602deb9d0dfb0fe6`. All transactions below finalized with `MAJORITY_AGREE` and leader `SUCCESS`; validator idle/disagree votes are shown rather than treated as vetoes.
+
+| Write | Transaction | Consensus summary |
+|---|---|---|
+| Authorize GitHub primary | `0x1c92f6e6f7c8c2139d71b7aabd892223953ff215aa173a14a06ffb43a811edda` | 5 agree |
+| Authorize npm supplemental | `0x677372220178154605e1a53e94f22ffb641e4d8845381a053a56612f07fb8a03` | 5 agree |
+| Authorize OSV supplemental | `0xe36dffc5c76c9bea53ee36a39bfb9ce567a9860a8f27c4000c092679f9d7a02b` | 4 agree / 1 idle |
+| Authorize second OSV supplemental | `0xcfcbbe441f4e9d72fd0dea3a03841ecb9fecb60e40a7d40dd1915dc759ad90ce` | 5 agree |
+| Register `rel-1` | `0xad25f1cbf7697193457cc077ffeaa486810e244a093f7b1774d54cd8e6a8d0cb` | 5 agree |
+| Register successor `rel-2` | `0x9ea6169b706304eb79c794f163eacbcb80fd594d540d038a70b28b02761f6895` | 3 agree / 2 idle |
+| Register `asm-1` | `0x0d0fbe1658ca37e6d9c9a19480325751040d59e3f0f854062b3a5897e75ee2ae` | 3 agree / 2 idle |
+| Evaluate `asm-1` | `0xe853c58b7dcf2b5ee5808d5e305f35e042b30ce92100b05388808b226391c80a` | `MAJORITY_AGREE`, leader success, 3 agree / 2 idle |
+| Register `asm-2` | `0x9af2f2cfcfbe5521b4b9d00019e1ce4547ffc65fc0d924068e98594ce6a4ae` | 5 agree |
+| Evaluate `asm-2` | `0x065221489512eb484df7cf4bc5b21341b33b75d9aa0c712d580b37f849e2bc5e` | `MAJORITY_AGREE`, leader success, 3 agree / 2 idle |
+| Register `asm-3` | `0xce65911c8d907132c2b7440171a1591ff7b2e792ab7f91d47a6ae883217f6284` | 3 agree / 2 idle |
+| Evaluate `asm-3` | `0x077b549e56a65e9f68b7c0f726bb6f4a9cf2bf85b4ac674466b2b6dd7e77c444` | `MAJORITY_AGREE`, leader success, 3 agree / 1 disagree / 1 idle |
+
+| Scenario | Final state | Evidence / enforcement |
+|---|---|---|
+| A: vulnerable `rel-1` / `asm-1` | `DECIDED`, `AFFECTED`, evidence complete, revision authenticated, `eligible=false`, authorization `BLOCKED`; packet `ee6fdb427b27972be433b196debeec109100c2a1ef1330841ebcd675d393829a` | Exact npm artifact policy gate exited 1; protected command did not run. Archived two-source replay returned `MATCH` and verified 13,001 bytes. |
+| B: successor `rel-2` / `asm-2` | `DECIDED`, `NOT_AFFECTED`, evidence complete, revision authenticated, `eligible=true`, `AUTHORIZED_FOR_THIS_ADVISORY`; packet `bd7f21a5fc4492d93acb1024107d697b28a0df05bcc6e8b39c0dc62fa6a6f602` | Exact successor artifact policy gate exited 0 and ran its protected command. Lineage retains `rel-1` as predecessor; original AFFECTED record remains historical. |
+| OSV revision-mismatch case: `asm-3` | `INVALID_REVISION`, no verdict, `revision_authenticated=false`, `evidence_complete=false`, failure `PRIMARY_REVISION_UNAUTHENTICATED`; frozen revision `osv-sha256:92808b79ce6cd239d6f2085b808522e9298cd1086cd8b943d8a468187ae1a4bd`, fetched body SHA-256 `6d94cb4483ee2659025e95633e85e3b5acde11b9013b2a126672eba03a36c457` | Fail-closed result observed on-chain. A combined GHSA+OSV gate read was denied after RPC returned `RLP string ends with 308 superfluous bytes`; this is an RPC failure, not proof of a clean policy HOLD. |
+
+The two-revision GHSA packet replay and exact identity are recorded in `evidence/replays/`; A/B CLI gate stdout and enforcement markers are in `evidence/live/gates/`. `evidence/live/production-readback.json` confirms the canonical Vercel bundle and live counter reads. No live retry/recovery or source revocation run is claimed. The independent validator set did not unanimously agree on `asm-3`; its receipt reached protocol `MAJORITY_AGREE` despite one disagree and one idle vote.
 
 ## Deployment
 

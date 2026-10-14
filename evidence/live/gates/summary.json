@@ -1,0 +1,20 @@
+[
+  {
+    "scenario": "scenario-a",
+    "exitCode": 1,
+    "protectedCommandExecuted": false,
+    "expectedAuthorization": false
+  },
+  {
+    "scenario": "scenario-b",
+    "exitCode": 0,
+    "protectedCommandExecuted": true,
+    "expectedAuthorization": true
+  },
+  {
+    "scenario": "scenario-f-multi",
+    "exitCode": 1,
+    "protectedCommandExecuted": false,
+    "expectedAuthorization": false
+  }
+]

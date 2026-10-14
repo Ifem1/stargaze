@@ -1,0 +1,16 @@
+{
+  "id": "rel-1",
+  "project": "stargaze-live-verification-fixture",
+  "repository_url": "https://github.com/lodash/lodash",
+  "owner": "0xd6423ae82a975d55c6ceac222827a727325e0459",
+  "registered_by": "0xd6423ae82a975d55c6ceac222827a727325e0459",
+  "version": "4.17.23",
+  "commit_sha": "835a537f36ee2fd5fb7f524e213ff9ba2d8698f8",
+  "artifact_digest": "9aba685f4b44d7a8e778cdf7085e9512143dabd78812df40e258375e1e8dceb4",
+  "ecosystem": "npm",
+  "package_name": "lodash",
+  "manifest_digest": "15071876d9804da13c29c06b00a40b9f15e6325a1619935c28969a062bac2da2",
+  "predecessor_id": "",
+  "sequence": 1,
+  "status": "SEALED"
+}

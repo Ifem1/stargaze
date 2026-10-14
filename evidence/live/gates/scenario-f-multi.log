@@ -1,0 +1,5 @@
+GenLayer RPC error (gen_call): RLP string ends with 308 superfluous bytes
+An internal error was received.
+
+Details: RLP string ends with 308 superfluous bytes
+Version: viem@2.57.5

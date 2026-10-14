@@ -1,0 +1,27 @@
+{
+  "id": "asm-1",
+  "release_id": "rel-1",
+  "advisory_id": "GHSA-r5fr-rjxr-66jc",
+  "revision": "ghsa-sha256:3db586ba1c68306eb90349477e0491f239b1bba1c09e35c781529c5ff7bb10c4",
+  "title": "lodash vulnerable to Code Injection via `_.template` imports key names",
+  "ecosystem": "npm",
+  "package_name": "lodash",
+  "policy_version": "stargaze-live-v1",
+  "registered_by": "0xd6423ae82a975d55c6ceac222827a727325e0459",
+  "sources": [
+    { "url": "https://api.github.com/advisories/GHSA-r5fr-rjxr-66jc", "role": "PRIMARY", "host": "api.github.com", "kind": "github_advisory", "source_epoch": 1 },
+    { "url": "https://registry.npmjs.org/lodash/4.17.23", "role": "SUPPLEMENTAL", "host": "registry.npmjs.org", "kind": "npm_release", "source_epoch": 1 }
+  ],
+  "state": "DECIDED",
+  "verdict": "AFFECTED",
+  "authorization": "BLOCKED",
+  "packet_digest": "ee6fdb427b27972be433b196debeec109100c2a1ef1330841ebcd675d393829a",
+  "eligible": false,
+  "revision_authenticated": true,
+  "revision_metadata": { "published_at": "2026-04-01T23:51:12Z", "updated_at": "2026-04-01T23:51:13Z" },
+  "evidence_complete": true,
+  "evidence_manifest": [],
+  "attempt_count": 1,
+  "sequence": 1,
+  "trust_epoch_valid": true
+}

@@ -1,0 +1,12 @@
+{
+  "contract_address": "0xb47A5B73D31007e38264A89998a7eBfD7Be46144",
+  "release_id": "rel-1",
+  "required": [
+    {
+      "revision": "ghsa-sha256:3db586ba1c68306eb90349477e0491f239b1bba1c09e35c781529c5ff7bb10c4",
+      "advisory_id": "GHSA-r5fr-rjxr-66jc"
+    }
+  ],
+  "artifact_digest": "9aba685f4b44d7a8e778cdf7085e9512143dabd78812df40e258375e1e8dceb4",
+  "chain_id": 61999
+}

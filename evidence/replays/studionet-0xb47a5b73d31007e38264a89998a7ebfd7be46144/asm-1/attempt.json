@@ -1,0 +1,38 @@
+{
+  "assessment_id": "asm-1",
+  "id": "asm-1/attempt-1",
+  "sequence": 1,
+  "state": "DECIDED",
+  "failure_reason": "",
+  "manifest": [
+    {
+      "url": "https://api.github.com/advisories/GHSA-r5fr-rjxr-66jc",
+      "role": "PRIMARY",
+      "kind": "github_advisory",
+      "response_status": 200,
+      "body_sha256": "3db586ba1c68306eb90349477e0491f239b1bba1c09e35c781529c5ff7bb10c4",
+      "body_bytes": 11328,
+      "metadata_identity_valid": true,
+      "complete": true,
+      "revision_authenticated": true,
+      "revision_metadata": { "published_at": "2026-04-01T23:51:12Z", "updated_at": "2026-04-01T23:51:13Z" }
+    },
+    {
+      "url": "https://registry.npmjs.org/lodash/4.17.23",
+      "role": "SUPPLEMENTAL",
+      "kind": "npm_release",
+      "response_status": 200,
+      "body_sha256": "e4a7fc0bcbcf9c35767494ca0b20bc5efe5b11e5418b4b5582352108d318fc5e",
+      "body_bytes": 1673,
+      "metadata_identity_valid": true,
+      "complete": true,
+      "revision_authenticated": false,
+      "revision_metadata": {}
+    }
+  ],
+  "evidence_complete": true,
+  "revision_authenticated": true,
+  "revision_metadata": { "published_at": "2026-04-01T23:51:12Z", "updated_at": "2026-04-01T23:51:13Z" },
+  "packet_digest": "ee6fdb427b27972be433b196debeec109100c2a1ef1330841ebcd675d393829a",
+  "verdict": "AFFECTED"
+}

@@ -1,0 +1,12 @@
+{
+  "checkedAt": "2026-10-14T09:41:40.154Z",
+  "productionUrl": "https://stargaze-taupe.vercel.app",
+  "httpStatus": 200,
+  "servedContractAddress": "0xb47A5B73D31007e38264A89998a7eBfD7Be46144",
+  "servedBundleUrl": "https://stargaze-taupe.vercel.app/_next/static/immutable/chunks/08ehga4yuzzd0.js",
+  "chainId": 61999,
+  "rpc": "https://studio.genlayer.com/api",
+  "releaseCount": 2,
+  "assessmentCount": 3,
+  "writeSubmitted": false
+}

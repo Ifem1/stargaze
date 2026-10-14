@@ -1,0 +1,16 @@
+{
+  "decision": "AUTHORIZED_FOR_POLICY_SET",
+  "chain_id": 61999,
+  "contract_address": "0xb47A5B73D31007e38264A89998a7eBfD7Be46144",
+  "release_id": "rel-2",
+  "artifact_digest": "aef19210308907f32d1b1d54f40e3cf461dbddae5605efe4027d6646c6967fb0",
+  "policy_digest": "bdabe8e3fd05b99f4d5246aacf54c40e541aba4ec6ab8059106675f915252571",
+  "verified": [
+    {
+      "advisory_id": "GHSA-r5fr-rjxr-66jc",
+      "revision": "ghsa-sha256:3db586ba1c68306eb90349477e0491f239b1bba1c09e35c781529c5ff7bb10c4",
+      "assessment_id": "asm-2",
+      "packet_digest": "bd7f21a5fc4492d93acb1024107d697b28a0df05bcc6e8b39c0dc62fa6a6f602"
+    }
+  ]
+}
