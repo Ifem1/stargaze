@@ -1,0 +1,29 @@
+{
+  "checkedAt": "2026-10-14T14:04:52.671Z",
+  "chainId": 61999,
+  "rpc": "https://studio.genlayer.com/api",
+  "requestedHash": "0xedb8a5d5ec217e5dd1a03ebfcb1d02153a674a8cf353049620b2482ac34b309c",
+  "receiptHash": "0xedb8a5d5ec217e5dd1a03ebfcb1d02153a674a8cf353049620b2482ac34b309c",
+  "status": "FINALIZED",
+  "consensus": "MAJORITY_DISAGREE",
+  "rounds": "4",
+  "round": "3",
+  "committed": "5",
+  "revealed": "5",
+  "validatorVotes": {
+    "0x4404Fb70d490c935758146f42A73DC850FF95C71": "idle",
+    "0x6737ca1d6BDF8b7C4f19143E2D55581Ca64eb7C3": "disagree",
+    "0x90402341F0B0e97b23023c0a87de957FB7148E0F": "disagree",
+    "0xacc2459F341D7a887bcA8FAA62F1EC9378d4Bc67": "idle",
+    "0xcE1d6bBB36B744536153966B4DD42276f5ADd0F8": "disagree"
+  },
+  "leader": [
+    {
+      "execution_result": "SUCCESS",
+      "error_code": null,
+      "error_description": null,
+      "stderr": "/py/libs/genlayer/gl/_internal/storage.py:21: UserWarning: Detected pickling storage class. Reading storage in nondet mode is not supported\n  warnings.warn(\n",
+      "stdout": ""
+    }
+  ]
+}

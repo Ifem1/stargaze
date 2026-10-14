@@ -21,13 +21,13 @@ Each manifest row stores frozen URL, role/kind, HTTP status, exact body SHA-256 
 
 ## Trust epochs and authorization
 
-Source authorization and emergency revocation are owner-only and scoped to an exact `(hostname, role)`. Revocation increments that role's epoch. Pending work using the old epoch is suspended; previous results remain immutable, while the authorization view blocks current promotion. Reauthorization increments the epoch again and does not restore an old result. A fresh assessment under a new authenticated content revision is required.
+Source authorization and emergency revocation are owner-only and scoped to an exact `(hostname, role)`. Revocation increments that role's epoch. Pending work using the old epoch is suspended; previous results remain immutable, while the authorization view blocks current promotion. Reauthorization increments the epoch again and does not restore an old result. The implementation permits a separately versioned reattestation at the new epoch with the same frozen source set only under restricted conditions; a substantive adverse decision cannot be bypassed by changing epochs. A new advisory content revision is not categorically required.
 
 The compact authorization_for_release_compact view accepts up to five packed SHA-256 identity commitments, rejects malformed or duplicate entries, and performs one identity-index read per exact pair. The legacy JSON view remains available for compatibility.
 
 ## TypeScript gate and frontend
 
-`scripts/gate.ts` reads fresh `LATEST_FINAL` release state, the contract's authoritative policy result, and one indexed assessment per policy pair. It independently checks the exact release, artifact digest, assessment identities, verdicts, packet hashes, revision authentication and completeness. Only then does it use `spawn(argv, {shell:false})` for the requested command.
+`scripts/gate.ts` reads fresh `LATEST_FINAL` release state and calls the contract's authoritative compact authorization view with the exact packed policy commitments. It validates the returned release, artifact digest, exact requirement checks, verdicts, packet hashes, revision authentication, completeness and trust-epoch eligibility. It does not issue a separate indexed read for every assessment. Only an authorized compact response permits `spawn(argv, {shell:false})` for the requested command.
 
 The frontend reads the same contract over stable Studionet and signs writes only through injected EIP-1193 wallets. Its advisory preparation workflow fetches canonical GitHub/OSV bytes and derives the content revision; the contract rechecks them independently. Registry and per-release histories are paginated. The attempt view exposes exact per-source commitments, archived-byte links, retry state and bounded attempt history.
 

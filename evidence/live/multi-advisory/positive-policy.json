@@ -1,0 +1,16 @@
+{
+  "chain_id": 61999,
+  "contract_address": "0xDf2961e690E1eEE004C443eAB10c389113C7Bd6a",
+  "release_id": "rel-2",
+  "artifact_digest": "aef19210308907f32d1b1d54f40e3cf461dbddae5605efe4027d6646c6967fb0",
+  "required": [
+    {
+      "advisory_id": "GHSA-29mw-wpgm-hmr9",
+      "revision": "ghsa-sha256:72b126165303330bdfce6f5ea852162b2efa565796049a9166d53cc2ee381a16"
+    },
+    {
+      "advisory_id": "GHSA-x5rq-j2xg-h7qm",
+      "revision": "ghsa-sha256:e7ff9dc77fff9e03ae976b9b6b51a1b48cb97d7de150270c3b61ab05d7298c94"
+    }
+  ]
+}

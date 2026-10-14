@@ -18,7 +18,7 @@ Never use Studio Dev 61997 or a globally installed RC. Before writes verify CLI 
 - RPC source check: exact 44,006-byte parity and 22-method schema, including compact authorization; see evidence/live/deployed-source-parity.json.
 - Explorer verification badge: not shown / not claimed.
 
-Older deployment addresses are superseded and must not be configured as canonical. See docs/LIVE_VERIFICATION.md for A/B and compact-policy readbacks and outstanding live proofs.
+Older deployment addresses are superseded and must not be configured as canonical. See docs/LIVE_VERIFICATION.md for A/B, multi-advisory policy readbacks and remaining live-proof limitations.
 
 ## Deployment and application configuration
 

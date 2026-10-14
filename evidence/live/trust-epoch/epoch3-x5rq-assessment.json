@@ -1,0 +1,263 @@
+{
+  "checkedAt": "2026-10-14T14:20:28.726Z",
+  "chainId": 61999,
+  "rpc": "https://studio.genlayer.com/api",
+  "contract": "0x7b51b5546e352959Fa4B3479c3D6Ed30E9E79149",
+  "signer": "0xD6423aE82a975d55C6CeaC222827A727325e0459",
+  "release": {
+    "artifact_digest": "aef19210308907f32d1b1d54f40e3cf461dbddae5605efe4027d6646c6967fb0",
+    "commit_sha": "0c9b60c1ae2656ef0d605e6726d72307eb5c31ff",
+    "ecosystem": "npm",
+    "id": "rel-1",
+    "manifest_digest": "1bb8995506b854ab08ac8bc3b701cea5517effacc82969b6f091d8cc956f706f",
+    "owner": "0xd6423ae82a975d55c6ceac222827a727325e0459",
+    "package_name": "lodash",
+    "predecessor_id": "",
+    "project": "stargaze-live-trust-epoch-20261014",
+    "registered_by": "0xd6423ae82a975d55c6ceac222827a727325e0459",
+    "repository_url": "https://github.com/lodash/lodash",
+    "sequence": 1,
+    "status": "SEALED",
+    "version": "4.18.0"
+  },
+  "adverseControl": {
+    "assessment": {
+      "advisory_id": "GHSA-29mw-wpgm-hmr9",
+      "attempt_count": 1,
+      "authorization": "BLOCKED",
+      "ecosystem": "npm",
+      "eligible": false,
+      "evidence_complete": true,
+      "evidence_manifest": [
+        {
+          "body_bytes": 9997,
+          "body_sha256": "72b126165303330bdfce6f5ea852162b2efa565796049a9166d53cc2ee381a16",
+          "complete": true,
+          "kind": "github_advisory",
+          "metadata_identity_valid": true,
+          "response_status": 200,
+          "revision_authenticated": true,
+          "revision_metadata": {
+            "published_at": "2022-01-06T20:30:46Z",
+            "updated_at": "2025-09-29T20:19:46Z"
+          },
+          "role": "PRIMARY",
+          "url": "https://api.github.com/advisories/GHSA-29mw-wpgm-hmr9"
+        },
+        {
+          "body_bytes": 1732,
+          "body_sha256": "bac24a6f249f705067942c12687bd2f0aedb9ba74376d744419bad60fa5b19b4",
+          "complete": true,
+          "kind": "npm_release",
+          "metadata_identity_valid": true,
+          "response_status": 200,
+          "revision_authenticated": false,
+          "revision_metadata": {},
+          "role": "SUPPLEMENTAL",
+          "url": "https://registry.npmjs.org/lodash/4.18.0"
+        }
+      ],
+      "id": "asm-1",
+      "identity_commitment": "a4e740270e7de08c793ee05321507d7fe5de182dfdf76a70f4e4f488e7cf3fd2",
+      "identity_version": 1,
+      "package_name": "lodash",
+      "packet_digest": "979d44ed96369a99581343374ba8de248514dfe3d7783f85cd93ff53c1cdfe73",
+      "policy_version": "stargaze-live-trust-epoch-v1",
+      "registered_by": "0xd6423ae82a975d55c6ceac222827a727325e0459",
+      "release_id": "rel-1",
+      "revision": "ghsa-sha256:72b126165303330bdfce6f5ea852162b2efa565796049a9166d53cc2ee381a16",
+      "revision_authenticated": true,
+      "revision_metadata": {
+        "published_at": "2022-01-06T20:30:46Z",
+        "updated_at": "2025-09-29T20:19:46Z"
+      },
+      "sequence": 1,
+      "sources": [
+        {
+          "host": "api.github.com",
+          "kind": "github_advisory",
+          "role": "PRIMARY",
+          "source_epoch": 1,
+          "url": "https://api.github.com/advisories/GHSA-29mw-wpgm-hmr9"
+        },
+        {
+          "host": "registry.npmjs.org",
+          "kind": "npm_release",
+          "role": "SUPPLEMENTAL",
+          "source_epoch": 1,
+          "url": "https://registry.npmjs.org/lodash/4.18.0"
+        }
+      ],
+      "state": "DECIDED",
+      "title": "Regular Expression Denial of Service (ReDoS) in lodash",
+      "trust_epoch_valid": true,
+      "verdict": "AFFECTED"
+    },
+    "failedReattestationTx": "0x80ee12747ef5812763914d1e29840845143259ae14bdfcdd4c1ed780d0d1d762",
+    "failedReattestationReceipt": "evidence/live/trust-epoch-reattestation-error-receipt.json"
+  },
+  "advisory": {
+    "id": "GHSA-x5rq-j2xg-h7qm",
+    "revision": "ghsa-sha256:e7ff9dc77fff9e03ae976b9b6b51a1b48cb97d7de150270c3b61ab05d7298c94",
+    "primaryUrl": "https://api.github.com/advisories/GHSA-x5rq-j2xg-h7qm",
+    "primaryBodySha256": "e7ff9dc77fff9e03ae976b9b6b51a1b48cb97d7de150270c3b61ab05d7298c94",
+    "primaryBodyBytes": 5567,
+    "packageMetadataUrl": "https://registry.npmjs.org/lodash/4.18.0",
+    "packageMetadataSha256": "bac24a6f249f705067942c12687bd2f0aedb9ba74376d744419bad60fa5b19b4",
+    "vulnerableVersionRange": ">= 4.7.0, < 4.17.11"
+  },
+  "firstApproval": {
+    "registration": {
+      "label": "register-ghsa-x5rq-under-trust-epoch-3",
+      "hash": "0xd4ab52b851c224aa3c08a5bb41eb39a7faa9421935fc96009d265842cf51f14e",
+      "status": "FINALIZED",
+      "consensus": "MAJORITY_AGREE",
+      "execution": "SUCCESS",
+      "validatorVotes": {
+        "0x3D83ab507785b95ca5C208bEc80CCe3D5ca98100": "agree",
+        "0x3E5ee2507cc167C9925Bf10c67D7986581112024": "agree",
+        "0x4aba638Cf0Cf5249437AaD968fC69dde46ae6BAC": "idle",
+        "0x6737ca1d6BDF8b7C4f19143E2D55581Ca64eb7C3": "idle",
+        "0x90402341F0B0e97b23023c0a87de957FB7148E0F": "agree"
+      },
+      "round": "0",
+      "committed": "5",
+      "revealed": "5"
+    },
+    "evaluation": {
+      "tx": {
+        "label": "evaluate-epoch-3",
+        "hash": "0xb749f3c54fc44c12c1d639fb5ed297f135250657b9947061619bb6fdc5c02c26",
+        "status": "FINALIZED",
+        "consensus": "MAJORITY_AGREE",
+        "execution": "SUCCESS",
+        "validatorVotes": {
+          "0x3E5ee2507cc167C9925Bf10c67D7986581112024": "agree",
+          "0x76c25AFC12c75485703cCFfd0083AA6201455B25": "agree",
+          "0xE6BD8050758CB15fC88387223E31Ae2708B119dC": "idle",
+          "0xacc2459F341D7a887bcA8FAA62F1EC9378d4Bc67": "agree",
+          "0xcE1d6bBB36B744536153966B4DD42276f5ADd0F8": "idle"
+        },
+        "round": "1",
+        "committed": "5",
+        "revealed": "5"
+      },
+      "assessment": {
+        "advisory_id": "GHSA-x5rq-j2xg-h7qm",
+        "attempt_count": 1,
+        "authorization": "BLOCKED",
+        "ecosystem": "npm",
+        "eligible": false,
+        "evidence_complete": true,
+        "evidence_manifest": [
+          {
+            "body_bytes": 5567,
+            "body_sha256": "e7ff9dc77fff9e03ae976b9b6b51a1b48cb97d7de150270c3b61ab05d7298c94",
+            "complete": true,
+            "kind": "github_advisory",
+            "metadata_identity_valid": true,
+            "response_status": 200,
+            "revision_authenticated": true,
+            "revision_metadata": {
+              "published_at": "2019-07-19T16:13:07Z",
+              "updated_at": "2025-09-29T20:19:29Z"
+            },
+            "role": "PRIMARY",
+            "url": "https://api.github.com/advisories/GHSA-x5rq-j2xg-h7qm"
+          },
+          {
+            "body_bytes": 1732,
+            "body_sha256": "bac24a6f249f705067942c12687bd2f0aedb9ba74376d744419bad60fa5b19b4",
+            "complete": true,
+            "kind": "npm_release",
+            "metadata_identity_valid": true,
+            "response_status": 200,
+            "revision_authenticated": false,
+            "revision_metadata": {},
+            "role": "SUPPLEMENTAL",
+            "url": "https://registry.npmjs.org/lodash/4.18.0"
+          }
+        ],
+        "id": "asm-3",
+        "identity_commitment": "ca1a6f427e0d6e3167c6db264921f405cf528acd58ed027168d325ae76bdc188",
+        "identity_version": 1,
+        "package_name": "lodash",
+        "packet_digest": "b70ea5815e78a4d6c9693e8207ead2decab2379f32f961068e0b7c2740dd561d",
+        "policy_version": "stargaze-trust-epoch-v1",
+        "registered_by": "0xd6423ae82a975d55c6ceac222827a727325e0459",
+        "release_id": "rel-1",
+        "revision": "ghsa-sha256:e7ff9dc77fff9e03ae976b9b6b51a1b48cb97d7de150270c3b61ab05d7298c94",
+        "revision_authenticated": true,
+        "revision_metadata": {
+          "published_at": "2019-07-19T16:13:07Z",
+          "updated_at": "2025-09-29T20:19:29Z"
+        },
+        "sequence": 3,
+        "sources": [
+          {
+            "host": "api.github.com",
+            "kind": "github_advisory",
+            "role": "PRIMARY",
+            "source_epoch": 3,
+            "url": "https://api.github.com/advisories/GHSA-x5rq-j2xg-h7qm"
+          },
+          {
+            "host": "registry.npmjs.org",
+            "kind": "npm_release",
+            "role": "SUPPLEMENTAL",
+            "source_epoch": 1,
+            "url": "https://registry.npmjs.org/lodash/4.18.0"
+          }
+        ],
+        "state": "DECIDED",
+        "title": "Regular Expression Denial of Service (ReDoS) in lodash",
+        "trust_epoch_valid": true,
+        "verdict": "AFFECTED"
+      }
+    },
+    "initialGate": {
+      "artifact_digest": "aef19210308907f32d1b1d54f40e3cf461dbddae5605efe4027d6646c6967fb0",
+      "checks": [],
+      "reason": "REQUIRED_REVISION_NOT_CLEARED",
+      "release_id": "rel-1",
+      "status": "HOLD"
+    }
+  },
+  "trustEpochLifecycle": null,
+  "transactions": [
+    {
+      "label": "register-ghsa-x5rq-under-trust-epoch-3",
+      "hash": "0xd4ab52b851c224aa3c08a5bb41eb39a7faa9421935fc96009d265842cf51f14e",
+      "status": "FINALIZED",
+      "consensus": "MAJORITY_AGREE",
+      "execution": "SUCCESS",
+      "validatorVotes": {
+        "0x3D83ab507785b95ca5C208bEc80CCe3D5ca98100": "agree",
+        "0x3E5ee2507cc167C9925Bf10c67D7986581112024": "agree",
+        "0x4aba638Cf0Cf5249437AaD968fC69dde46ae6BAC": "idle",
+        "0x6737ca1d6BDF8b7C4f19143E2D55581Ca64eb7C3": "idle",
+        "0x90402341F0B0e97b23023c0a87de957FB7148E0F": "agree"
+      },
+      "round": "0",
+      "committed": "5",
+      "revealed": "5"
+    },
+    {
+      "label": "evaluate-epoch-3",
+      "hash": "0xb749f3c54fc44c12c1d639fb5ed297f135250657b9947061619bb6fdc5c02c26",
+      "status": "FINALIZED",
+      "consensus": "MAJORITY_AGREE",
+      "execution": "SUCCESS",
+      "validatorVotes": {
+        "0x3E5ee2507cc167C9925Bf10c67D7986581112024": "agree",
+        "0x76c25AFC12c75485703cCFfd0083AA6201455B25": "agree",
+        "0xE6BD8050758CB15fC88387223E31Ae2708B119dC": "idle",
+        "0xacc2459F341D7a887bcA8FAA62F1EC9378d4Bc67": "agree",
+        "0xcE1d6bBB36B744536153966B4DD42276f5ADd0F8": "idle"
+      },
+      "round": "1",
+      "committed": "5",
+      "revealed": "5"
+    }
+  ]
+}

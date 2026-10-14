@@ -1,0 +1,29 @@
+{
+  "checkedAt": "2026-10-14T14:06:19.793Z",
+  "chainId": 61999,
+  "rpc": "https://studio.genlayer.com/api",
+  "requestedHash": "0x57e598e35096cbba119384deea8327d911ba28f84c2c1d891f184a2f5aa0821c",
+  "receiptHash": "0x57e598e35096cbba119384deea8327d911ba28f84c2c1d891f184a2f5aa0821c",
+  "status": "FINALIZED",
+  "consensus": "MAJORITY_AGREE",
+  "rounds": "1",
+  "round": "0",
+  "committed": "5",
+  "revealed": "5",
+  "validatorVotes": {
+    "0x3E5ee2507cc167C9925Bf10c67D7986581112024": "idle",
+    "0x4aba638Cf0Cf5249437AaD968fC69dde46ae6BAC": "idle",
+    "0x6737ca1d6BDF8b7C4f19143E2D55581Ca64eb7C3": "agree",
+    "0x772ffCd1dF6Cc566eC4b8d3f4F4f8eBbb6B36C84": "agree",
+    "0x90402341F0B0e97b23023c0a87de957FB7148E0F": "agree"
+  },
+  "leader": [
+    {
+      "execution_result": "SUCCESS",
+      "error_code": null,
+      "error_description": null,
+      "stderr": "",
+      "stdout": ""
+    }
+  ]
+}
